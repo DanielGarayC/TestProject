@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mediciones</title>
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+</head>
+<body>
+  <h1>Mediciones</h1>
+  
+  <!-- Pasar los datos como un atributo data en el contenedor -->
+  <div id="container" style="width:100%; height:400px;" data-mediciones='<%= JSON.stringify(mediciones) %>'></div>
+
+  <script>
+    // Obtener el valor del atributo data-mediciones y parsearlo
+    const mediciones = JSON.parse(document.getElementById('container').dataset.mediciones);
+
+    const seriesData = {};
+    mediciones.forEach(medicion => {
+      if (medicion.data_sensors) {
+        medicion.data_sensors.forEach(data => {
+          const sensorId = data.sensor?.idSensor; // Verifica que el sensor existe
+          if (sensorId) {
+            if (!seriesData[sensorId]) {
+              seriesData[sensorId] = { name: `Sensor ${sensorId}`, data: [] };
+            }
+            const index = data.index; // Usa el índice en el eje X
+            const valor = parseFloat(data.valor); // Usa el valor en el eje Y
+            
+            // Log para depurar valores de index y valor
+            console.log(`Sensor ID: ${sensorId}, Index: ${index}, Valor: ${valor}`);
+
+            // Solo añade si ambos valores son válidos
+            if (!isNaN(index) && !isNaN(valor)) {
+              seriesData[sensorId].data.push([index, valor]);
+            }
+          }
+        });
+      }
+    });
+
+    const seriesArray = Object.values(seriesData);
+
+    // Configuración del gráfico
+    Highcharts.chart('container', {
+      chart: { type: 'line' },
+      title: { text: 'Mediciones por Sensor' },
+      xAxis: { title: { text: 'Index' } }, // Cambia el eje X a 'Index'
+      yAxis: { title: { text: 'Valor' } },
+      series: seriesArray.length > 0 ? seriesArray : [{ name: 'No Data', data: [] }]
+    });
+  </script>
+</body>
+</html>
