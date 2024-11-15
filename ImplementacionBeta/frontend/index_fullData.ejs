@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mediciones</title>
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+</head>
+<body>
+  <h1>Mediciones</h1>
+  
+  <!-- Contenedor principal donde se agregarán los gráficos -->
+  <div id="charts-container"></div>
+
+  <!-- Pasar los datos como un atributo data en el contenedor -->
+  <div id="data-container" data-mediciones='<%= JSON.stringify(mediciones) %>' style="display: none;"></div>
+
+  <script>
+    // Obtener el valor del atributo data-mediciones y parsearlo
+    const mediciones = JSON.parse(document.getElementById('data-container').dataset.mediciones);
+
+    // Organizar los datos por sensor
+    const seriesData = {};
+    mediciones.forEach(medicion => {
+      if (medicion.data_sensors) {
+        medicion.data_sensors.forEach(data => {
+          const sensorId = data.sensor?.idSensor; // Verifica que el sensor existe
+          if (sensorId) {
+            if (!seriesData[sensorId]) {
+              seriesData[sensorId] = { name: `Sensor ${sensorId}`, data: [] };
+            }
+            const index = data.index; // Usa el índice en el eje X
+            const valor = parseFloat(data.valor); // Usa el valor en el eje Y
+
+            // Solo añade si ambos valores son válidos
+            if (!isNaN(index) && !isNaN(valor)) {
+              seriesData[sensorId].data.push([index, valor]);
+            }
+          }
+        });
+      }
+    });
+
+    // Obtener el contenedor principal donde se agregarán los gráficos
+    const chartsContainer = document.getElementById('charts-container');
+
+    // Crear un gráfico por cada sensor
+    Object.entries(seriesData).forEach(([sensorId, sensorData], index) => {
+      // Crear un contenedor para el gráfico del sensor
+      const chartDiv = document.createElement('div');
+      chartDiv.id = `container-${sensorId}`;
+      chartDiv.style.width = '100%';
+      chartDiv.style.height = '400px';
+      chartDiv.style.marginBottom = '20px';
+      chartsContainer.appendChild(chartDiv);
+
+      // Configurar y renderizar el gráfico de Highcharts
+      Highcharts.chart(chartDiv.id, {
+        chart: { type: 'line' },
+        title: { text: `Mediciones para Sensor ${sensorId}` },
+        xAxis: { title: { text: 'Index' } },
+        yAxis: { title: { text: 'Valor' } },
+        series: [sensorData]
+      });
+    });
+  </script>
+</body>
+</html>

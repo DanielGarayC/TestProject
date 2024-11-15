@@ -28,6 +28,9 @@ app.get('/mediciones', (req, res) => MedicionController.getAllMediciones(req, re
 // Nueva ruta para la vista con Highcharts
 app.get('/mediciones/vista', (req, res) => MedicionController.mostrarMedicionesEnVista(req, res));
 
+app.get('/mediciones/vistaFull', (req, res) => MedicionController.mostrarMedicionesFull(req, res));
+
+
 // Inicia el servidor
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

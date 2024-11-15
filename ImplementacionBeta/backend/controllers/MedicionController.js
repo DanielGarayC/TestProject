@@ -13,8 +13,18 @@ class MedicionController {
   // Nueva función para mostrar la vista con Highcharts
   async mostrarMedicionesEnVista(req, res) {
     try {
-      const mediciones = await MedicionRepository.findAllMedicionesWithData();
+      const mediciones = await MedicionRepository.getDecimatedData();
       res.render('index', { mediciones });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Error al mostrar las mediciones en la vista', error: err.message });
+    }
+  }
+
+  async mostrarMedicionesFull(req, res) {
+    try {
+      const mediciones = await MedicionRepository.findAllMedicionesWithData();
+      res.render('index_fullData', { mediciones });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: 'Error al mostrar las mediciones en la vista', error: err.message });
