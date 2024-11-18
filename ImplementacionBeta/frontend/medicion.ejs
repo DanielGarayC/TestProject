@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medición Detallada</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+</head>
+<body>
+    <h1>Medición Detallada</h1>
+    <p>ID Medición: <%= medicion.idMedicion %></p>
+
+    <!-- Contenedor para almacenar los datos en formato JSON -->
+    <div id="data-container" data-mediciones='<%- JSON.stringify(medicion.data_sensors || []) %>'></div>
+
+    <!-- Contenedor para gráficos -->
+    <div id="graficos"></div>
+
+    <script>
+        // Obtener los datos desde el atributo data-mediciones
+        const dataContainer = document.getElementById('data-container');
+        const mediciones = JSON.parse(dataContainer.getAttribute('data-mediciones'));
+
+        if (!mediciones || mediciones.length === 0) {
+            console.error("No hay datos disponibles para graficar.");
+        } else {
+            // Agrupar datos por idSensor
+            const datosPorSensor = mediciones.reduce((acc, medicion) => {
+                const sensorId = medicion.sensor.idSensor;
+                if (!acc[sensorId]) {
+                    acc[sensorId] = [];
+                }
+                acc[sensorId].push(medicion);
+                return acc;
+            }, {});
+
+            // Generar un gráfico para cada sensor
+            Object.keys(datosPorSensor).forEach(sensorId => {
+                const sensorData = datosPorSensor[sensorId];
+                const valores = sensorData.map(medicion => medicion.valor);
+                const indices = sensorData.map(medicion => medicion.index);
+
+                // Crear un contenedor para cada gráfico
+                const graficoDiv = document.createElement('div');
+                graficoDiv.style.width = '100%';
+                graficoDiv.style.height = '400px';
+                document.getElementById('graficos').appendChild(graficoDiv);
+
+                // Inicializar el gráfico para el sensor actual
+                Highcharts.chart(graficoDiv, {
+                    chart: {
+                        type: 'line'
+                    },
+                    title: {
+                        text: `Mediciones - Sensor ${sensorId}`
+                    },
+                    xAxis: {
+                        categories: indices,
+                        title: {
+                            text: 'Index'
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Valor'
+                        }
+                    },
+                    series: [{
+                        name: `Sensor ${sensorId}`,
+                        data: valores
+                    }]
+                });
+            });
+        }
+    </script>
+</body>
+</html>
