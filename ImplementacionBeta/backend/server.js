@@ -30,6 +30,9 @@ app.get('/mediciones/vista', (req, res) => MedicionController.mostrarMedicionesE
 
 app.get('/mediciones/vistaFull', (req, res) => MedicionController.mostrarMedicionesFull(req, res));
 
+// Nueva ruta para mostrar una medición específica
+app.get('/mediciones/:id', (req, res) => MedicionController.mostrarMedicionPorIdEnVista(req, res));
+
 
 // Inicia el servidor
 const PORT = process.env.PORT || 5000;
