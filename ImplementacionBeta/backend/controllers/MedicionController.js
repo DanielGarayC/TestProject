@@ -12,7 +12,6 @@ class MedicionController {
     }
   }*/
 
-
   // Nueva función para mostrar la vista con Highcharts
   async mostrarMedicionPorIdEnVista(req, res) {
     try {
@@ -32,8 +31,19 @@ class MedicionController {
         console.error("Error al obtener la medición:", err);
         res.status(500).json({ message: `Error al mostrar la medición con ID ${id}`, error: err.message });
     }
-}
+ }
 
+  async mostrarMedicionesAceleracion(req, res){
+
+  }
+
+  async mostrarMedicionesTemperatura(req, res){
+
+  }
+
+  async mostrarMedicionesSSI(req, res){
+
+  }
 
 }
 

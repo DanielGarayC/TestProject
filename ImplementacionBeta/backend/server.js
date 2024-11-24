@@ -7,10 +7,15 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
+const path = require('path'); //Módulo path para los estilos
+
 // Configurar el motor de vistas para EJS y la carpeta de vistas
 app.set('view engine', 'ejs');
 app.set('views', '../frontend');  // Asegúrate de que esta línea apunte a la ubicación de index.ejs
 
+
+// Configurar archivos estáticos (CSS, JS, imágenes, etc.)
+app.use(express.static(path.join(__dirname, '../frontend/VersionBeta/')));
 
 
 // Conexión a la base de datos
@@ -29,7 +34,14 @@ app.get('/mediciones', (req, res) => MedicionController.getAllMediciones(req, re
 
 // Nueva ruta para mostrar una medición específica
 app.get('/mediciones/:id', (req, res) => MedicionController.mostrarMedicionPorIdEnVista(req, res));
-
+//Vista principal
+app.get('/pagPrincipal', (req,res) => {
+  res.render('VersionBeta/index', { usuario: 'Jacorvi' });
+})
+//Vistas mediciones:
+app.get('/tipoMedicion/Aceleracion' , (req,res) => MedicionController.mostrarMedicionesAceleracion(req, res));
+app.get('/tipoMedicion/Temperatura' , (req,res) => MedicionController.mostrarMedicionesTemperatura(req, res));
+app.get('/tipoMedicion/SSI' , (req,res) => MedicionController.mostrarMedicionesSSI(req, res));
 
 // Inicia el servidor
 const PORT = process.env.PORT || 5000;
