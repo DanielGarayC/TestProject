@@ -26,7 +26,7 @@ def insert_data(file_path):
 
     # Insert into Medicion table
     with connection.cursor() as cursor:
-        cursor.execute("INSERT INTO Medicion (Fecha_hora) VALUES (%s)", (date_time_obj,))
+        cursor.execute("INSERT INTO Medicion (Fecha_hora, idTipoMedicion) VALUES (%s, 1)", (date_time_obj,))
         medicion_id = cursor.lastrowid
         print("Inserted Medicion with id:", medicion_id)  # Verifica el id generado
 
@@ -71,7 +71,7 @@ def insert_data(file_path):
     print("Data inserted successfully")
 
 # Example usage
-file_path = "C:/Users/bruno/Downloads/ArchivosData/Data_Ensayo__22-10-24_21-00-24.txt"
+file_path = "C:/Users/bruno/Downloads/ArchivosData/Data_Ensayo__05-11-24_11-12-16.txt"
 insert_data(file_path)
 
 # Close the database connection
