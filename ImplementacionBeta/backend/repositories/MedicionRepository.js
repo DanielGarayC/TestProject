@@ -33,6 +33,7 @@ class MedicionRepository {
     }
 
     const decimatedData = [];
+    //---------FACTOR DE DECIMACION---------//
     const decimationFactor = 100;
 
     // Agrupar y procesar los datos de sensores
