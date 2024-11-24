@@ -21,14 +21,14 @@ createConnection()
   .catch((err) => {
     console.error('Error al conectar a la base de datos:', err);
   });
+//MANEJAR RUTAS
+/*ENDPOINT
+app.get('/mediciones', (req, res) => MedicionController.getAllMediciones(req, res));*/
 
-// Rutasapp.set('views', './frontend');
-app.get('/mediciones', (req, res) => MedicionController.getAllMediciones(req, res));
 
-// Nueva ruta para la vista con Highcharts
-app.get('/mediciones/vista', (req, res) => MedicionController.mostrarMedicionesEnVista(req, res));
 
-app.get('/mediciones/vistaFull', (req, res) => MedicionController.mostrarMedicionesFull(req, res));
+// Nueva ruta para mostrar una medición específica
+app.get('/mediciones/:id', (req, res) => MedicionController.mostrarMedicionPorIdEnVista(req, res));
 
 
 // Inicia el servidor
