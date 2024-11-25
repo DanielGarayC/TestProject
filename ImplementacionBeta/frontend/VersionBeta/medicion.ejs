@@ -1,21 +1,102 @@
+
 <!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medición Detallada</title>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Mediciones de Aceleración</title>
+    <link rel="stylesheet" href="/assets/vendors/mdi/css/materialdesignicons.min.css" />
+    <link rel="stylesheet" href="/assets/vendors/flag-icon-css/css/flag-icon.min.css" />
+    <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <link rel="stylesheet" href="/assets/vendors/font-awesome/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css" />
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <link rel="shortcut icon" href="/assets/images/favicon.png" />
     <script src="https://code.highcharts.com/highcharts.js"></script>
-</head>
-<body>
-    <h1>Medición Detallada</h1>
-    <p>ID Medición: <%= medicion.idMedicion %></p>
+    <style>
+        .content-wrapper{
+            overflow-y: scroll !important; /* Asegura que haya scroll si es necesario */
+          }
+    </style>
+  </head>
+  <body>
+    <div class="container-scroller">
+      <nav class="sidebar sidebar-offcanvas" id="sidebar">
+        <div class="text-center sidebar-brand-wrapper d-flex align-items-center">
+        </div>
+        <ul class="nav">
+          <li class="nav-item">
+            <a class="nav-link" href="/pagPrincipal">
+              <i class="mdi mdi-home menu-icon"></i>
+              <span class="menu-title">Inicio</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="container-fluid page-body-wrapper">
+        <div id="theme-settings" class="settings-panel">
+          <i class="settings-close mdi mdi-close"></i>
+          <p class="settings-heading">SIDEBAR SKINS</p>
+          <div class="sidebar-bg-options selected" id="sidebar-default-theme">
+            <div class="img-ss rounded-circle bg-light border mr-3"></div> Default
+          </div>
+          <div class="sidebar-bg-options" id="sidebar-dark-theme">
+            <div class="img-ss rounded-circle bg-dark border mr-3"></div> Dark
+          </div>
+          <p class="settings-heading mt-2">HEADER SKINS</p>
+          <div class="color-tiles mx-0 px-4">
+            <div class="tiles light"></div>
+            <div class="tiles dark"></div>
+          </div>
+        </div>
+        <nav class="navbar col-lg-12 col-12 p-lg-0 fixed-top d-flex flex-row">
+          <div class="navbar-menu-wrapper d-flex align-items-stretch justify-content-between">
+            <a class="navbar-brand brand-logo-mini align-self-center d-lg-none" href="index.html"><img src="/assets/images/logo-mini.svg" alt="logo" /></a>
+            <button class="navbar-toggler navbar-toggler align-self-center mr-2" type="button" data-toggle="minimize">
+              <i class="mdi mdi-menu"></i>
+            </button>
+            
+           
+            <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
+              <span class="mdi mdi-menu"></span>
+            </button>
+          </div>
+        </nav>
+        <div class="main-panel">
+            <div class="content-wrapper pb-0">
 
-    <!-- Contenedor para almacenar los datos en formato JSON -->
-    <div id="data-container" data-mediciones='<%- JSON.stringify(medicion.data_sensors || []) %>'></div>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="mb-0">Medición Detallada</h1>
+                    <a href="/tipoMedicion/1" class="btn btn-info">Regresar</a>
+                </div>
+                <p>
+                    Medición de: 
+                    <%= new Date(medicion.fecha_hora).toLocaleDateString('es-PE', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    }).replace(',', '').replace(/^\w/, c => c.toUpperCase()) %> a las 
+                    <%= new Date(medicion.fecha_hora).toLocaleTimeString('es-PE', { 
+                      hour: '2-digit', 
+                      minute: '2-digit', 
+                      second: '2-digit' 
+                    }) %>
+                  </p>
+                <div id="data-container" data-mediciones='<%- JSON.stringify(medicion.data_sensors || []) %>'></div>
 
-    <!-- Contenedor para gráficos -->
-    <div id="graficos"></div>
+                <div id="graficos"></div>
 
+                
+
+            </div>
+        </div>
+        <!-- main-panel ends -->
+      </div>
+      <!-- page-body-wrapper ends -->
+    </div>
+    <!-- container-scroller -->
     <script>
         // Obtener los datos desde el atributo data-mediciones
         const dataContainer = document.getElementById('data-container');
@@ -49,6 +130,9 @@
                 // Inicializar el gráfico para el sensor actual
                 Highcharts.chart(graficoDiv, {
                     chart: {
+                        height: 400, // Ajusta el tamaño para no exceder el viewport
+                      },
+                    chart: {
                         type: 'line'
                     },
                     title: {
@@ -67,11 +151,30 @@
                     },
                     series: [{
                         name: `Sensor ${sensorId}`,
-                        data: valores
+                        data: valores,
+                        lineWidth: 1 
                     }]
                 });
             });
         }
     </script>
-</body>
+    <!-- plugins:js -->
+    <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <script src="/assets/vendors/chart.js/Chart.min.js"></script>
+    <script src="/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
+    <script src="/assets/vendors/flot/jquery.flot.js"></script>
+    <script src="/assets/vendors/flot/jquery.flot.resize.js"></script>
+    <script src="/assets/vendors/flot/jquery.flot.categories.js"></script>
+    <script src="/assets/vendors/flot/jquery.flot.fillbetween.js"></script>
+    <script src="/assets/vendors/flot/jquery.flot.stack.js"></script>
+    <script src="/assets/vendors/flot/jquery.flot.pie.js"></script>
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="/assets/js/off-canvas.js"></script>
+    <script src="/assets/js/hoverable-collapse.js"></script>
+    <script src="/assets/js/misc.js"></script>
+
+  </body>
 </html>

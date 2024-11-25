@@ -39,9 +39,9 @@ app.get('/pagPrincipal', (req,res) => {
   res.render('VersionBeta/index', { usuario: 'Jacorvi' });
 })
 //Vistas mediciones:
-app.get('/tipoMedicion/Aceleracion' , (req,res) => MedicionController.mostrarMedicionesAceleracion(req, res));
-app.get('/tipoMedicion/Temperatura' , (req,res) => MedicionController.mostrarMedicionesTemperatura(req, res));
-app.get('/tipoMedicion/SSI' , (req,res) => MedicionController.mostrarMedicionesSSI(req, res));
+app.get('/tipoMedicion/:idTipoMedicion', (req, res) => 
+  MedicionController.obtenerMedicionesPorTipo(req, res)
+);
 
 // Inicia el servidor
 const PORT = process.env.PORT || 5000;

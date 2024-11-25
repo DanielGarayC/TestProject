@@ -66,7 +66,15 @@ class MedicionRepository {
 
     medicion.data_sensors = decimatedData;
     return medicion;
-}
+  }
+  async findMedicionesByTipo(idTipo) {
+    const repository = this.getRepository();
+    return await repository.find({
+      where: { tipomedicion: { idTipoMedicion: idTipo } }, // Usamos la relación 'tipomedicion'
+    });
+  }
+  
+  
 
 }
 

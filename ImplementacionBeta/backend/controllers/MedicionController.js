@@ -33,17 +33,21 @@ class MedicionController {
     }
  }
 
-  async mostrarMedicionesAceleracion(req, res){
+ async obtenerMedicionesPorTipo(req, res) {
+  try {
+    const idTipoMedicion = req.params.idTipoMedicion; // Obtenemos el idTipo de la URL
+    const mediciones = await MedicionRepository.findMedicionesByTipo(idTipoMedicion);
 
+    if (!mediciones || mediciones.length === 0) {
+      return res.status(404).send('No se encontraron mediciones para el tipo especificado.');
+    }
+
+    res.render('VersionBeta/medicionPorTipo', { mediciones });
+  } catch (err) {
+    console.error('Error al obtener las mediciones:', err);
+    res.status(500).json({ message: 'Error al mostrar las mediciones', error: err.message });
   }
-
-  async mostrarMedicionesTemperatura(req, res){
-
-  }
-
-  async mostrarMedicionesSSI(req, res){
-
-  }
+}
 
 }
 
