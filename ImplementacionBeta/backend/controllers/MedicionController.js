@@ -33,21 +33,40 @@ class MedicionController {
     }
  }
 
- async obtenerMedicionesPorTipo(req, res) {
-  try {
-    const idTipoMedicion = req.params.idTipoMedicion; // Obtenemos el idTipo de la URL
-    const mediciones = await MedicionRepository.findMedicionesByTipo(idTipoMedicion);
+  async obtenerMedicionesPorTipo(req, res) {
+    try {
+      const idTipoMedicion = req.params.idTipoMedicion; // Obtenemos el idTipo de la URL
+      const mediciones = await MedicionRepository.findMedicionesByTipo(idTipoMedicion);
 
-    if (!mediciones || mediciones.length === 0) {
-      return res.status(404).send('No se encontraron mediciones para el tipo especificado.');
+      if (!mediciones || mediciones.length === 0) {
+        return res.status(404).send('No se encontraron mediciones para el tipo especificado.');
+      }
+
+      res.render('VersionBeta/medicionPorTipo', { mediciones });
+    } catch (err) {
+      console.error('Error al obtener las mediciones:', err);
+      res.status(500).json({ message: 'Error al mostrar las mediciones', error: err.message });
     }
-
-    res.render('VersionBeta/medicionPorTipo', { mediciones });
-  } catch (err) {
-    console.error('Error al obtener las mediciones:', err);
-    res.status(500).json({ message: 'Error al mostrar las mediciones', error: err.message });
   }
-}
+  async redirigirPrimeraMedicion(req, res) {
+    try {
+      const { idTipoMedicion } = req.params; // Obtener el idTipoMedicion desde la URL
+
+      // Llamar al repositorio para obtener el idMedicion de la última medición
+      const idMedicion = await MedicionRepository.findIdUltimaMedicionPorTipo(idTipoMedicion);
+
+      // Verificar si se obtuvo el idMedicion
+      if (!idMedicion) {
+        return res.status(404).send('No se encontraron mediciones para el tipo especificado.');
+      }
+
+      // Redirigir a la URL de la medición con el idMedicion
+      res.redirect(`/mediciones/${idMedicion}`);
+    } catch (err) {
+      console.error('Error al obtener el id de la última medición:', err);
+      res.status(500).json({ message: 'Error al obtener el id de la última medición', error: err.message });
+    }
+  }
 
 }
 

@@ -71,8 +71,27 @@ class MedicionRepository {
     const repository = this.getRepository();
     return await repository.find({
       where: { tipomedicion: { idTipoMedicion: idTipo } }, // Usamos la relación 'tipomedicion'
+      order: {
+        fecha_hora: 'DESC', // Ordenar por 'fecha_hora' en orden descendente (más reciente primero)
+      },
     });
   }
+
+  async findIdUltimaMedicionPorTipo(idTipo) {
+    const repository = this.getRepository();
+    const ultimaMedicion = await repository
+      .createQueryBuilder('Medicion')
+      .leftJoin('Medicion.tipomedicion', 'Tipomedicion') // Relacionamos con 'tipomedicion'
+      .where('Tipomedicion.idTipoMedicion = :idTipo', { idTipo }) // Filtramos por idTipoMedicion
+      .orderBy('Medicion.fecha_hora', 'DESC') // Ordenamos por fecha_hora descendente
+      .select('Medicion.idMedicion') // Solo seleccionamos el idMedicion
+      .getOne(); // Obtenemos un solo resultado
+  
+    return ultimaMedicion ? ultimaMedicion.idMedicion : null; // Retornamos el idMedicion
+  }
+  
+  
+  
   
   
 

@@ -38,6 +38,13 @@ app.get('/mediciones/:id', (req, res) => MedicionController.mostrarMedicionPorId
 app.get('/pagPrincipal', (req,res) => {
   res.render('VersionBeta/index', { usuario: 'Jacorvi' });
 })
+app.get('/Monitoreo', (req,res) => {
+  res.render('VersionBeta/subindex', { usuario: 'Jacorvi' });
+})
+//Manejo de primera medicion:
+app.get('/primeraMedicion/:idTipoMedicion', (req, res) => 
+  MedicionController.redirigirPrimeraMedicion(req, res)
+);
 //Vistas mediciones:
 app.get('/tipoMedicion/:idTipoMedicion', (req, res) => 
   MedicionController.obtenerMedicionesPorTipo(req, res)
