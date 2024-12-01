@@ -33,6 +33,10 @@ class MedicionController {
     }
  }
 
+ //Para Temperatura (trabajanding...)
+
+ //Para Humedad (trabajanding...)
+
   async obtenerMedicionesPorTipo(req, res) {
     try {
       const idTipoMedicion = req.params.idTipoMedicion; // Obtenemos el idTipo de la URL
@@ -62,6 +66,46 @@ class MedicionController {
 
       // Redirigir a la URL de la medición con el idMedicion
       res.redirect(`/mediciones/${idMedicion}`);
+    } catch (err) {
+      console.error('Error al obtener el id de la última medición:', err);
+      res.status(500).json({ message: 'Error al obtener el id de la última medición', error: err.message });
+    }
+  }
+  //Temperatura
+  async redirigirTerceraMedicion(req, res) {
+    try {
+      const { idTipoMedicion } = req.params; // Obtener el idTipoMedicion desde la URL
+
+      // Llamar al repositorio para obtener el idMedicion de la última medición
+      const idMedicion = await MedicionRepository.findIdUltimaMedicionPorTipo(idTipoMedicion);
+
+      // Verificar si se obtuvo el idMedicion
+      if (!idMedicion) {
+        return res.status(404).send('No se encontraron mediciones para el tipo especificado.');
+      }
+
+      // Redirigir a la URL de la medición con el idMedicion
+      res.redirect(`/temperatura/${idMedicion}`);
+    } catch (err) {
+      console.error('Error al obtener el id de la última medición:', err);
+      res.status(500).json({ message: 'Error al obtener el id de la última medición', error: err.message });
+    }
+  }
+  //Humedad
+  async redirigirCuartaMedicion(req, res) {
+    try {
+      const { idTipoMedicion } = req.params; // Obtener el idTipoMedicion desde la URL
+
+      // Llamar al repositorio para obtener el idMedicion de la última medición
+      const idMedicion = await MedicionRepository.findIdUltimaMedicionPorTipo(idTipoMedicion);
+
+      // Verificar si se obtuvo el idMedicion
+      if (!idMedicion) {
+        return res.status(404).send('No se encontraron mediciones para el tipo especificado.');
+      }
+
+      // Redirigir a la URL de la medición con el idMedicion
+      res.redirect(`/humedad/${idMedicion}`);
     } catch (err) {
       console.error('Error al obtener el id de la última medición:', err);
       res.status(500).json({ message: 'Error al obtener el id de la última medición', error: err.message });

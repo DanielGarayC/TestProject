@@ -34,16 +34,34 @@ app.get('/mediciones', (req, res) => MedicionController.getAllMediciones(req, re
 
 // Nueva ruta para mostrar una medición específica
 app.get('/mediciones/:id', (req, res) => MedicionController.mostrarMedicionPorIdEnVista(req, res));
+//FALTA HOMOGENIZAR TODO EN UN SOLO CONTROLLER owo (en proceso)
+// Nueva ruta para mostrar una medición específica
+app.get('/temperatura/:id', (req, res) => MedicionController.mostrarTemperaturaPorIdEnVista(req, res));
+// Nueva ruta para mostrar una medición específica
+app.get('/humedad/:id', (req, res) => MedicionController.mostrarHumedadPorIdEnVista(req, res));
 //Vista principal
 app.get('/pagPrincipal', (req,res) => {
   res.render('VersionBeta/index', { usuario: 'Jacorvi' });
 })
+//Monitoreo
 app.get('/Monitoreo', (req,res) => {
   res.render('VersionBeta/subindex', { usuario: 'Jacorvi' });
 })
-//Manejo de primera medicion:
+//Parámetros ambientales
+app.get('/Ambientales', (req,res) => {
+  res.render('VersionBeta/subindex2', { usuario: 'Jacorvi' });
+})
+//Manejo de primera medicion (Aceleración):
 app.get('/primeraMedicion/:idTipoMedicion', (req, res) => 
   MedicionController.redirigirPrimeraMedicion(req, res)
+);
+//Manejo de tercera medicion (Temperatura):
+app.get('/terceraMedicion/:idTipoMedicion', (req, res) => 
+  MedicionController.redirigirTerceraMedicion(req, res)
+);
+//Manejo de tercera medicion (Humedad):
+app.get('/cuartaMedicion/:idTipoMedicion', (req, res) => 
+  MedicionController.redirigirCuartaMedicion(req, res)
 );
 //Vistas mediciones:
 app.get('/tipoMedicion/:idTipoMedicion', (req, res) => 
