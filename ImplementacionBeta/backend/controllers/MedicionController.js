@@ -47,7 +47,7 @@ class MedicionController {
 
     //Depurar: console.log("Medición enviada al cliente:", JSON.stringify(medicion, null, 2));
 
-    res.render('VersionBeta/temperatura', { medicion });
+    res.render('VersionBeta/parametros', { medicion });
 } catch (err) {
     console.error("Error al obtener la medición:", err);
     res.status(500).json({ message: `Error al mostrar la medición con ID ${id}`, error: err.message });
@@ -83,7 +83,7 @@ class MedicionController {
       const ultimaMedicion = await MedicionRepository.findUltimaMedicionPorTipo(idTipoMedicion);
 
       // Verificar si se obtuvo el idMedicion
-      if (!ultimaMedicion.idMedicion) {
+      if (!ultimaMedicion || !ultimaMedicion.idMedicion) {
         return res.status(404).send('No se encontraron mediciones para el tipo especificado.');
       }
 
@@ -99,15 +99,15 @@ class MedicionController {
           idTipoMedicion: 2,
         });
 
-        if (!medicionTipo2) {
+        if (!medicionTipo2 || !medicionTipo2.idMedicion) {
           return res.status(404).send('No se encontraron mediciones de tipo 2 con la misma hora.');
         }
 
         // Redirigir a la medición de tipo 2
-        return res.redirect(`/mediciones/ac?tipo1=${ultimaMedicion.idMedicion}&tipo2=${medicionTipo2.idMedicion}`);
+        return res.redirect(`/mediciones/aceleracion?tipo1=${ultimaMedicion.idMedicion}&tipo2=${medicionTipo2.idMedicion}`);
       }
       // Redirigir a la URL de la medición con el idMedicion
-      res.redirect(`/mediciones/${ultimaMedicion.idMedicion}`);
+      res.redirect(`/medicionT/${ultimaMedicion.idMedicion}`);
     } catch (err) {
       console.error('Error al obtener el id de la última medición:', err);
       res.status(500).json({ message: 'Error al obtener el id de la última medición', error: err.message });
@@ -117,27 +117,35 @@ class MedicionController {
   //Para mostrar 2 sensores en aceleración
   async mostrarAmbasMediciones(req, res) {
     try {
-      const { tipo1, tipo2 } = req.query;
-  
-      // Obtener ambas mediciones
-      const medicionTipo1 = await MedicionRepository.findMedicionPorId(tipo1);
-      const medicionTipo2 = await MedicionRepository.findMedicionPorId(tipo2);
-  
-      // Verificar si ambas mediciones existen
-      if (!medicionTipo1 || !medicionTipo2) {
-        return res.status(404).send('No se encontraron ambas mediciones.');
-      }
-  
-      // Renderizar la vista que muestra ambas mediciones
-      res.render('VersionBeta/aceleracion', {
-        medicionTipo1,
-        medicionTipo2,
-      });
+        const { tipo1, tipo2 } = req.query;
+
+        if (!tipo1 || !tipo2) {
+          return res.status(400).send('Faltan parámetros tipo1 y tipo2');
+        }
+
+        // Obtener la medición del tipo 1 con decimación
+        const medicionTipo1 = await MedicionRepository.getDecimatedDataById(tipo1);
+
+        if (!medicionTipo1 || !medicionTipo1.data_sensors || medicionTipo1.data_sensors.length === 0) {
+            console.error("Medición tipo 1 no tiene datos o está vacía");
+            return res.status(404).send("No se encontraron datos para la medición de tipo 1 con ID " + tipo1);
+        }
+
+        // Obtener la medición del tipo 2 sin decimación
+        const medicionTipo2 = await MedicionRepository.getSimpleData(tipo2);
+
+        if (!medicionTipo2 || !medicionTipo2.data_sensors || medicionTipo2.data_sensors.length === 0) {
+            console.error("Medición tipo 2 no tiene datos o está vacía");
+            return res.status(404).send("No se encontraron datos para la medición de tipo 2 con ID " + tipo2);
+        }
+
+        // Renderizar la vista que muestra ambas mediciones
+        res.render('VersionBeta/aceleracion', {medicionTipo1,medicionTipo2});
     } catch (err) {
-      console.error('Error al mostrar ambas mediciones:', err);
-      res.status(500).json({ message: 'Error al mostrar ambas mediciones', error: err.message });
+        console.error('Error al mostrar ambas mediciones:', err);
+        res.status(500).json({ message: 'Error al mostrar ambas mediciones', error: err.message });
     }
-  }
+}
   
   
 

@@ -31,11 +31,10 @@ createConnection()
 app.get('/mediciones', (req, res) => MedicionController.getAllMediciones(req, res));*/
 
 
-
-// Nueva ruta para mostrar una medición específica
-app.get('/mediciones/:id', (req, res) => MedicionController.mostrarMedicionPorIdEnVista(req, res));
 //Aceleración
-app.get('/mediciones/ac', (req, res) => MedicionController.mostrarAmbasMediciones(req, res));
+app.get('/mediciones/aceleracion', (req, res) => MedicionController.mostrarAmbasMediciones(req, res));
+// Nueva ruta para mostrar una medición específica
+app.get('/medicionT/:id', (req, res) => MedicionController.mostrarTemperaturaPorIdEnVista(req, res));
 
 
 //Vista principal
