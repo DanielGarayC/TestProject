@@ -91,6 +91,7 @@ class MedicionController {
       const fechaHora = new Date(ultimaMedicion.fecha_hora);
       const horaTruncada = new Date(fechaHora); // Crear una copia de la fecha
       horaTruncada.setMinutes(0, 0, 0); // Truncar a la hora
+      const hora = fechaHora.getHours();
 
       if (idTipoMedicion === '1') {
         // Buscar una medición con idTipoMedicion = 2, misma hora y día
@@ -104,7 +105,7 @@ class MedicionController {
         }
 
         // Redirigir a la medición de tipo 2
-        return res.redirect(`/mediciones/aceleracion?tipo1=${ultimaMedicion.idMedicion}&tipo2=${medicionTipo2.idMedicion}`);
+        return res.redirect(`/mediciones/aceleracion?tipo1=${ultimaMedicion.idMedicion}&tipo2=${medicionTipo2.idMedicion}&hora=${hora}`);
       }
       // Redirigir a la URL de la medición con el idMedicion
       res.redirect(`/medicionT/${ultimaMedicion.idMedicion}`);
@@ -117,10 +118,10 @@ class MedicionController {
   //Para mostrar 2 sensores en aceleración
   async mostrarAmbasMediciones(req, res) {
     try {
-        const { tipo1, tipo2 } = req.query;
+        const { tipo1, tipo2, hora } = req.query;
 
-        if (!tipo1 || !tipo2) {
-          return res.status(400).send('Faltan parámetros tipo1 y tipo2');
+        if (!tipo1 || !tipo2 || !hora) {
+          return res.status(400).send('Faltan parámetros tipo1, tipo2 o hora');
         }
 
         // Obtener la medición del tipo 1 con decimación
@@ -134,14 +135,28 @@ class MedicionController {
         // Obtener la medición del tipo 2 sin decimación
         const medicionTipo2 = await MedicionRepository.getSimpleData(tipo2);
 
-        if (!medicionTipo2 || !medicionTipo2.data_sensors || medicionTipo2.data_sensors.length === 0) {
-            console.error("Medición tipo 2 no tiene datos o está vacía");
-            return res.status(404).send("No se encontraron datos para la medición de tipo 2 con ID " + tipo2);
+        if (!medicionTipo2 || medicionTipo2.length === 0) {
+          console.error("No se encontraron valores para el índice especificado en el tipo 2");
+          return res.status(404).send("No se encontraron valores para el índice especificado en el tipo 2");
         }
 
+        const dataSensorTipo2 = medicionTipo2.data_sensors.find(sensorData =>
+          sensorData.index === hora && sensorData.sensor.idSensor === 3); // Busca el sensor con id 3 y el index que pasa
+
+        const valorTemperatura = dataSensorTipo2 ? dataSensorTipo2.valor : 'No disponible';
+
+        const dataSensorTipo2Humedad = medicionTipo2.data_sensors.find(sensorData =>
+          sensorData.index === hora && sensorData.sensor.idSensor === 4); // Busca el sensor con id 4 (Humedad)
+
+        const valorHumedad = dataSensorTipo2Humedad ? dataSensorTipo2Humedad.valor : 'No disponible';
+
+
         // Renderizar la vista que muestra ambas mediciones
-        res.render('VersionBeta/aceleracion', {medicionTipo1,medicionTipo2});
-    } catch (err) {
+        res.render('VersionBeta/aceleracion', {
+                    medicionTipo1,
+                    valorTemperatura: { nombre: "Sensor 3 - Temperatura", valor: valorTemperatura },
+                    valorHumedad: { nombre: "Sensor 4 - Humedad", valor: valorHumedad },});   
+       } catch (err) {
         console.error('Error al mostrar ambas mediciones:', err);
         res.status(500).json({ message: 'Error al mostrar ambas mediciones', error: err.message });
     }

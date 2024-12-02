@@ -85,7 +85,11 @@
                   </p>
                 <div id="data-container"></div>
                 <div id="graficos"></div>
-
+                <div class="sensor-values">
+                  <h3>Valores Registrados</h3>
+                  <p><strong><%= valorTemperatura.nombre %>: </strong><%= valorTemperatura.valor %></p>
+                  <p><strong><%= valorHumedad.nombre %>: </strong><%= valorHumedad.valor %></p>
+              </div>
                 
 
             </div>
@@ -98,7 +102,6 @@
     <script>
         // Parsear datos del backend
         const dataTipo1 = JSON.parse('<%- JSON.stringify(medicionTipo1.data_sensors || []) %>');
-        const dataTipo2 = JSON.parse('<%- JSON.stringify(medicionTipo2.data_sensors || []) %>');
   
         // Función para procesar y agrupar datos por sensor
         function procesarDatos(datos) {
@@ -156,7 +159,6 @@
   
         // Procesar datos y crear gráficos para ambos tipos
         crearGraficos(procesarDatos(dataTipo1), 1); // Gráficos para tipo 1
-        crearGraficos(procesarDatos(dataTipo2), 2); // Gráficos para tipo 2
     </script>
     <!-- plugins:js -->
     <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
