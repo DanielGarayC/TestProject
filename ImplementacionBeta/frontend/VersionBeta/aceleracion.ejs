@@ -4,7 +4,7 @@
     <!-- Required meta tags -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <title><%= titulo %></title>
+    <title>Medición de Aceleración</title>
     <link rel="stylesheet" href="/assets/vendors/mdi/css/materialdesignicons.min.css" />
     <link rel="stylesheet" href="/assets/vendors/flag-icon-css/css/flag-icon.min.css" />
     <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
@@ -12,6 +12,12 @@
     <link rel="stylesheet" href="/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css" />
     <link rel="stylesheet" href="/assets/css/style.css" />
     <link rel="shortcut icon" href="/assets/images/favicon.png" />
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <style>
+        .content-wrapper{
+            overflow-y: scroll !important; /* Asegura que haya scroll si es necesario */
+          }
+    </style>
   </head>
   <body>
     <div class="container-scroller">
@@ -58,37 +64,29 @@
         </nav>
         <div class="main-panel">
             <div class="content-wrapper pb-0">
-                    <h1><%= titulo %></h1>
-                    <div class="row">
-                      <% mediciones.forEach((medicion, index) => { %>
-                        <div class="col-md-3">
-                          <a href="/mediciones/<%= medicion.idMedicion %>" class="card mb-4 text-decoration-none">
-                            <div class="card-body">
-                              <p class="card-text text-center text-dark" style="font-weight: 500;">
-                                <% 
-                                  const fecha = new Date(medicion.fecha_hora);
 
-                                  if (Number(idTipoMedicion) === 2) {
-                                    // Truncar al inicio de la hora
-                                    fecha.setMinutes(0, 0, 0);
-                                  }
-                                  
-                                  const fechaMostrada = fecha.toLocaleString('es-PE', { 
-                                    timeZone: 'America/Lima', 
-                                    dateStyle: 'short', 
-                                    timeStyle: 'medium' 
-                                  });
-                                %>
-                                <%= fechaMostrada %>
-                              </p>
-                            </div>
-                          </a>
-                        </div>
-                        <% if ((index + 1) % 4 === 0) { %>
-                          </div><div class="row">
-                        <% } %>
-                      <% }) %>
-                    </div>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="mb-0">Mediciones Detalladas</h1>
+                    <a href="/tipoMedicion/1" class="btn btn-info">Regresar</a>
+                </div>
+                <p>
+                    Medición de: 
+                    <%= new Date(medicionTipo1.fecha_hora).toLocaleDateString('es-PE', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    }).replace(',', '').replace(/^\w/, c => c.toUpperCase()) %> a las 
+                    <%= new Date(medicionTipo1.fecha_hora).toLocaleTimeString('es-PE', { 
+                      hour: '2-digit', 
+                      minute: '2-digit', 
+                      second: '2-digit' 
+                    }) %>
+                  </p>
+                <div id="data-container"></div>
+                <div id="graficos"></div>
+
+                
 
             </div>
         </div>
@@ -97,6 +95,69 @@
       <!-- page-body-wrapper ends -->
     </div>
     <!-- container-scroller -->
+    <script>
+        // Parsear datos del backend
+        const dataTipo1 = JSON.parse('<%- JSON.stringify(medicionTipo1.data_sensors || []) %>');
+        const dataTipo2 = JSON.parse('<%- JSON.stringify(medicionTipo2.data_sensors || []) %>');
+  
+        // Función para procesar y agrupar datos por sensor
+        function procesarDatos(datos) {
+            return datos.reduce((acc, medicion) => {
+                const sensorId = medicion.sensor.idSensor;
+                if (!acc[sensorId]) {
+                    acc[sensorId] = [];
+                }
+                acc[sensorId].push(medicion);
+                return acc;
+            }, {});
+        }
+  
+        // Crear gráficos dinámicamente
+        function crearGraficos(datosPorSensor, tipo) {
+            Object.keys(datosPorSensor).forEach(sensorId => {
+                const sensorData = datosPorSensor[sensorId];
+                const valores = sensorData.map(medicion => medicion.valor);
+                const indices = sensorData.map((_, i) => i + 1);
+  
+                // Crear un contenedor para cada gráfico
+                const graficoDiv = document.createElement('div');
+                graficoDiv.style.width = '100%';
+                graficoDiv.style.height = '400px';
+                document.getElementById('graficos').appendChild(graficoDiv);
+  
+                // Inicializar el gráfico
+                Highcharts.chart(graficoDiv, {
+                    chart: {
+                        type: 'line',
+                        height: 400,
+                    },
+                    title: {
+                        text: `Mediciones Tipo ${tipo} - Sensor ${sensorId}`,
+                    },
+                    xAxis: {
+                        categories: indices,
+                        title: {
+                            text: 'Index',
+                        },
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Valor',
+                        },
+                    },
+                    series: [{
+                        name: `Sensor ${sensorId}`,
+                        data: valores,
+                        lineWidth: 1,
+                    }],
+                });
+            });
+        }
+  
+        // Procesar datos y crear gráficos para ambos tipos
+        crearGraficos(procesarDatos(dataTipo1), 1); // Gráficos para tipo 1
+        crearGraficos(procesarDatos(dataTipo2), 2); // Gráficos para tipo 2
+    </script>
     <!-- plugins:js -->
     <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
     <!-- endinject -->
@@ -114,5 +175,6 @@
     <script src="/assets/js/off-canvas.js"></script>
     <script src="/assets/js/hoverable-collapse.js"></script>
     <script src="/assets/js/misc.js"></script>
+
   </body>
 </html>

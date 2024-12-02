@@ -34,9 +34,28 @@ class MedicionController {
  }
 
  //Para Temperatura (trabajanding...)
+ async mostrarTemperaturaPorIdEnVista(req, res){
+  try {
+    const { id } = req.params;
+    const medicion = await MedicionRepository.getSimpleData(id);
 
- //Para Humedad (trabajanding...)
+    // Verifica que `medicion` no esté vacío
+    if (!medicion || !medicion.data_sensors || medicion.data_sensors.length === 0) {
+        console.error("Medición no tiene datos o está vacía");
+        return res.status(404).send("No se encontraron datos para la medición con ID " + id);
+    }
 
+    //Depurar: console.log("Medición enviada al cliente:", JSON.stringify(medicion, null, 2));
+
+    res.render('VersionBeta/temperatura', { medicion });
+} catch (err) {
+    console.error("Error al obtener la medición:", err);
+    res.status(500).json({ message: `Error al mostrar la medición con ID ${id}`, error: err.message });
+}
+ }
+
+
+//Mediciones por tipo
   async obtenerMedicionesPorTipo(req, res) {
     try {
       const idTipoMedicion = req.params.idTipoMedicion; // Obtenemos el idTipo de la URL
@@ -46,71 +65,81 @@ class MedicionController {
         return res.status(404).send('No se encontraron mediciones para el tipo especificado.');
       }
 
-      res.render('VersionBeta/medicionPorTipo', { mediciones });
+      const titulo = `Mediciones  ${idTipoMedicion}`;
+
+      res.render('VersionBeta/medicionPorTipo', { mediciones, titulo, idTipoMedicion });
     } catch (err) {
       console.error('Error al obtener las mediciones:', err);
       res.status(500).json({ message: 'Error al mostrar las mediciones', error: err.message });
     }
   }
+
+
   async redirigirPrimeraMedicion(req, res) {
     try {
       const { idTipoMedicion } = req.params; // Obtener el idTipoMedicion desde la URL
 
       // Llamar al repositorio para obtener el idMedicion de la última medición
-      const idMedicion = await MedicionRepository.findIdUltimaMedicionPorTipo(idTipoMedicion);
+      const ultimaMedicion = await MedicionRepository.findUltimaMedicionPorTipo(idTipoMedicion);
 
       // Verificar si se obtuvo el idMedicion
-      if (!idMedicion) {
+      if (!ultimaMedicion.idMedicion) {
         return res.status(404).send('No se encontraron mediciones para el tipo especificado.');
       }
 
+      // Obtener la fecha de la última medición
+      const fechaHora = new Date(ultimaMedicion.fecha_hora);
+      const horaTruncada = new Date(fechaHora); // Crear una copia de la fecha
+      horaTruncada.setMinutes(0, 0, 0); // Truncar a la hora
+
+      if (idTipoMedicion === '1') {
+        // Buscar una medición con idTipoMedicion = 2, misma hora y día
+        const medicionTipo2 = await MedicionRepository.findMedicionPorHoraYTipo({
+          fecha: horaTruncada,
+          idTipoMedicion: 2,
+        });
+
+        if (!medicionTipo2) {
+          return res.status(404).send('No se encontraron mediciones de tipo 2 con la misma hora.');
+        }
+
+        // Redirigir a la medición de tipo 2
+        return res.redirect(`/mediciones/ac?tipo1=${ultimaMedicion.idMedicion}&tipo2=${medicionTipo2.idMedicion}`);
+      }
       // Redirigir a la URL de la medición con el idMedicion
-      res.redirect(`/mediciones/${idMedicion}`);
+      res.redirect(`/mediciones/${ultimaMedicion.idMedicion}`);
     } catch (err) {
       console.error('Error al obtener el id de la última medición:', err);
       res.status(500).json({ message: 'Error al obtener el id de la última medición', error: err.message });
     }
   }
-  //Temperatura
-  async redirigirTerceraMedicion(req, res) {
+
+  //Para mostrar 2 sensores en aceleración
+  async mostrarAmbasMediciones(req, res) {
     try {
-      const { idTipoMedicion } = req.params; // Obtener el idTipoMedicion desde la URL
-
-      // Llamar al repositorio para obtener el idMedicion de la última medición
-      const idMedicion = await MedicionRepository.findIdUltimaMedicionPorTipo(idTipoMedicion);
-
-      // Verificar si se obtuvo el idMedicion
-      if (!idMedicion) {
-        return res.status(404).send('No se encontraron mediciones para el tipo especificado.');
+      const { tipo1, tipo2 } = req.query;
+  
+      // Obtener ambas mediciones
+      const medicionTipo1 = await MedicionRepository.findMedicionPorId(tipo1);
+      const medicionTipo2 = await MedicionRepository.findMedicionPorId(tipo2);
+  
+      // Verificar si ambas mediciones existen
+      if (!medicionTipo1 || !medicionTipo2) {
+        return res.status(404).send('No se encontraron ambas mediciones.');
       }
-
-      // Redirigir a la URL de la medición con el idMedicion
-      res.redirect(`/temperatura/${idMedicion}`);
+  
+      // Renderizar la vista que muestra ambas mediciones
+      res.render('VersionBeta/aceleracion', {
+        medicionTipo1,
+        medicionTipo2,
+      });
     } catch (err) {
-      console.error('Error al obtener el id de la última medición:', err);
-      res.status(500).json({ message: 'Error al obtener el id de la última medición', error: err.message });
+      console.error('Error al mostrar ambas mediciones:', err);
+      res.status(500).json({ message: 'Error al mostrar ambas mediciones', error: err.message });
     }
   }
-  //Humedad
-  async redirigirCuartaMedicion(req, res) {
-    try {
-      const { idTipoMedicion } = req.params; // Obtener el idTipoMedicion desde la URL
-
-      // Llamar al repositorio para obtener el idMedicion de la última medición
-      const idMedicion = await MedicionRepository.findIdUltimaMedicionPorTipo(idTipoMedicion);
-
-      // Verificar si se obtuvo el idMedicion
-      if (!idMedicion) {
-        return res.status(404).send('No se encontraron mediciones para el tipo especificado.');
-      }
-
-      // Redirigir a la URL de la medición con el idMedicion
-      res.redirect(`/humedad/${idMedicion}`);
-    } catch (err) {
-      console.error('Error al obtener el id de la última medición:', err);
-      res.status(500).json({ message: 'Error al obtener el id de la última medición', error: err.message });
-    }
-  }
+  
+  
 
 }
 
