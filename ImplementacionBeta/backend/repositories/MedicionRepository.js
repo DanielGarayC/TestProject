@@ -20,6 +20,23 @@ class MedicionRepository {
     });
   }
 
+  async obtenerMedicionPorId(id){
+    try {
+      const repository = this.getRepository();
+      const medicion = await repository.findOne({ where: { idMedicion: id } });
+    
+      if (!medicion) {
+        console.log('Medición no encontrada');
+        return null;
+      }
+      
+      return medicion;
+    } catch (err) {
+      console.error('Error al obtener la medición:', err);
+      throw err; // Lanza el error si algo sale mal
+    }
+  }
+
   async getDecimatedDataById(id) {
     const repository = this.getRepository();
     const medicion = await repository.findOne({

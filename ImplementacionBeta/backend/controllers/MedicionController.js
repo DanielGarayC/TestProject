@@ -15,23 +15,42 @@ class MedicionController {
   // Nueva función para mostrar la vista con Highcharts
   async mostrarMedicionPorIdEnVista(req, res) {
     try {
-        const { id } = req.params;
-        const medicion = await MedicionRepository.getDecimatedDataById(id);
+        const { id } = req.params;  // Obtener el 'id' desde los parámetros de la URL
+        console.log("id recibido en la ruta: ", id);
+        const medicion = await MedicionRepository.obtenerMedicionPorId(id); // Obtener medición por ID
 
-        // Verifica que `medicion` no esté vacío
-        if (!medicion || !medicion.data_sensors || medicion.data_sensors.length === 0) {
-            console.error("Medición no tiene datos o está vacía");
-            return res.status(404).send("No se encontraron datos para la medición con ID " + id);
+        // Verificar si se encontró la medición
+        if (!medicion) {
+          console.log('Medición no encontrada');
+          return res.status(404).send('Medición no encontrada');
         }
 
-        //Depurar: console.log("Medición enviada al cliente:", JSON.stringify(medicion, null, 2));
+        // Obtener la fecha de la última medición
+        const fechaHora = new Date(medicion.fecha_hora);
+        const horaTruncada = new Date(fechaHora);  // Crear una copia de la fecha
+        horaTruncada.setMinutes(0, 0, 0);  // Truncar a la hora
+        const hora = fechaHora.getHours();  // Obtener solo la hora
 
-        res.render('VersionBeta/medicion', { medicion });
+        // Buscar medición del tipo 2 con la misma hora
+        const medicionTipo2 = await MedicionRepository.findMedicionPorHoraYTipo({
+          fecha: horaTruncada,
+          idTipoMedicion: 2,
+        });
+
+        // Verificar si se encontró la medición tipo 2
+        if (!medicionTipo2 || !medicionTipo2.idMedicion) {
+          return res.status(404).send('No se encontraron mediciones de tipo 2 con la misma hora.');
+        }
+
+        // Redirigir a la URL de medición de tipo 2
+        return res.redirect(`/mediciones/aceleracion?tipo1=${medicion.idMedicion}&tipo2=${medicionTipo2.idMedicion}&hora=${hora}`);
+
     } catch (err) {
         console.error("Error al obtener la medición:", err);
-        res.status(500).json({ message: `Error al mostrar la medición con ID ${id}`, error: err.message });
+        // Aquí usamos req.params.id en lugar de solo id para evitar el error de referencia
+        res.status(500).json({ message: `Error al mostrar la medición con ID ${req.params.id}`, error: err.message });
     }
- }
+}
 
  //Para Temperatura (trabajanding...)
  async mostrarTemperaturaPorIdEnVista(req, res){

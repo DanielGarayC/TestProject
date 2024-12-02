@@ -35,7 +35,8 @@ app.get('/mediciones', (req, res) => MedicionController.getAllMediciones(req, re
 app.get('/mediciones/aceleracion', (req, res) => MedicionController.mostrarAmbasMediciones(req, res));
 // Nueva ruta para mostrar una medición específica
 app.get('/medicionT/:id', (req, res) => MedicionController.mostrarTemperaturaPorIdEnVista(req, res));
-
+// Nueva ruta para mostrar mediciones de los bloques
+app.get('/mediciones/:id', (req, res) => MedicionController.mostrarMedicionPorIdEnVista(req, res));
 
 //Vista principal
 app.get('/pagPrincipal', (req,res) => {

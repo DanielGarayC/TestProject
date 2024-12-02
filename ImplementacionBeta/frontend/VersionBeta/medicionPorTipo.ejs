@@ -62,7 +62,14 @@
                     <div class="row">
                       <% mediciones.forEach((medicion, index) => { %>
                         <div class="col-md-3">
-                          <a href="/mediciones/<%= medicion.idMedicion %>" class="card mb-4 text-decoration-none">
+                          <a 
+                            <% console.log(medicion.idMedicion); %>
+                            <% if (idTipoMedicion == 1) { %>
+                                href="/mediciones/<%= medicion.idMedicion %>"
+                            <% } else { %>
+                                href="/medicionT/<%= medicion.idMedicion %>"
+                            <% } %>  
+                            class="card mb-4 text-decoration-none">
                             <div class="card-body">
                               <p class="card-text text-center text-dark" style="font-weight: 500;">
                                 <% 
