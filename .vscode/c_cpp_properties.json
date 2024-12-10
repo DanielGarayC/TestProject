@@ -1,0 +1,26 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/ImplementacionBeta/backend/AnalysysFreq/include",
+                "${workspaceFolder}/ImplementacionBeta/backend/AnalysysFreq/include/mysql",
+                "${workspaceFolder}/ImplementacionBeta/backend/AnalysysFreq/include/fftw3",
+                "${workspaceFolder}/ImplementacionBeta/backend/AnalysysFreq/include/cppconn",
+                "${workspaceFolder}/ImplementacionBeta/backend/AnalysysFreq/include/node",
+                "${workspaceFolder}/node_modules/node-addon-api" 
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.22000.0",
+            "compilerPath": "cl.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64"
+        }
+    ],
+    "version": 4
+}
