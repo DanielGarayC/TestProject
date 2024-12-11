@@ -1,5 +1,5 @@
 const MedicionRepository = require('../repositories/MedicionRepository');
-
+const AnalisisSensoresService = require('../services/AnalisisSensoresService.js');
 //MANEJAR VISTAS
 class MedicionController {
   /*ENDPOINT
@@ -151,6 +151,29 @@ class MedicionController {
             return res.status(404).send("No se encontraron datos para la medición de tipo 1 con ID " + tipo1);
         }
 
+        const medicionTipo1Graficas = await MedicionRepository.getSimpleData(tipo1);
+        const datosPorSensor = await MedicionRepository.procesarDatos(medicionTipo1Graficas.data_sensors);
+        console.log('Datos por sensor procesados:', datosPorSensor);
+
+        const analisisPorSensor = Object.keys(datosPorSensor).map(sensorId => {
+          const sensorData = datosPorSensor[sensorId].map(d => d.valor);
+          console.log(`Procesando análisis para el sensor ${sensorId}`);
+      
+          try {
+              const psd = AnalisisSensoresService.computePSD(sensorData);
+              const fdd = AnalisisSensoresService.computeFDD(sensorData);
+              const spectrogram = AnalisisSensoresService.calculateSpectrogram(sensorData);
+      
+              console.log(`Resultados para sensor ${sensorId}:`, { psd, fdd, spectrogram });
+      
+              return { sensorId, psd, fdd, spectrogram };
+          } catch (error) {
+              console.error(`Error en el análisis para el sensor ${sensorId}:`, error);
+              return { sensorId, error: error.message };
+          }
+        });
+      
+
         // Obtener la medición del tipo 2 sin decimación
         const medicionTipo2 = await MedicionRepository.getSimpleData(tipo2);
 
@@ -170,11 +193,14 @@ class MedicionController {
         const valorHumedad = dataSensorTipo2Humedad ? dataSensorTipo2Humedad.valor : 'No disponible';
 
 
+        console.log('AnalisisPorSensor desde el backend:', analisisPorSensor);
+
         // Renderizar la vista que muestra ambas mediciones
         res.render('VersionBeta/aceleracion', {
                     medicionTipo1,
+                    analisisPorSensor,
                     valorTemperatura: { nombre: "Sensor 3 - Temperatura", valor: valorTemperatura },
-                    valorHumedad: { nombre: "Sensor 4 - Humedad", valor: valorHumedad },});   
+                    valorHumedad: { nombre: "Sensor 4 - Humedad", valor: valorHumedad }});
        } catch (err) {
         console.error('Error al mostrar ambas mediciones:', err);
         res.status(500).json({ message: 'Error al mostrar ambas mediciones', error: err.message });

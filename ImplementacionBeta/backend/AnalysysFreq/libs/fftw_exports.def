@@ -1,0 +1,7 @@
+LIBRARY libfftw3-3
+EXPORTS
+fftw_execute
+fftw_plan_dft_r2c_1d
+fftw_malloc
+fftw_free
+fftw_destroy_plan

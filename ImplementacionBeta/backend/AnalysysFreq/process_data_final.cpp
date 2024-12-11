@@ -5,39 +5,16 @@
 #include <resultset.h>
 #include <exception.h>
 #include <iostream>
-#include <vector>   
+#include <vector>
 #include <cmath>
 #include <fstream>
 #include <fftw3.h>
 #include <napi.h>
 #include <string>
-// Incluye tus funciones aquí...
-// Función para conectar a MySQL y cargar datos
-std::vector<double> loadDataFromDatabase(const std::string& host, const std::string& user, const std::string& password, const std::string& database) {
-    try {
-        sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-        std::unique_ptr<sql::Connection> conn(driver->connect(host, user, password));
-        conn->setSchema(database);
 
-        std::unique_ptr<sql::PreparedStatement> pstmt(conn->prepareStatement("SELECT valor FROM data_sensor ORDER BY index ASC"));
-        std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
-
-        std::vector<double> data;
-        while (res->next()) {
-            data.push_back(res->getDouble(1)); // Obtener el valor de la columna
-        }
-
-        return data;
-    } catch (sql::SQLException& e) {
-        throw std::runtime_error("Error de MySQL: " + std::string(e.what()));
-    }
-}
-
-// Función para calcular Welch (PSD)
+// Función para calcular PSD usando el método de Welch
 std::vector<double> computeWelch(const std::vector<double>& data, int fs, int nfft) {
     int windowSize = nfft;
-    //overlap representa los puntos que se tomarán tanto en la ventana actual como en la siguiente para 
-    //no perder tanta info owo
     int overlap = windowSize / 2;
     int step = windowSize - overlap;
     int numWindows = (data.size() - windowSize) / step + 1;
@@ -65,9 +42,10 @@ std::vector<double> computeWelch(const std::vector<double>& data, int fs, int nf
         fftw_destroy_plan(plan);
         fftw_free(out);
     }
-
+    const double epsilon = 1e-12;
     for (auto& p : psd) {
         p /= numWindows;
+        p = 10 * log10(std::max(p, epsilon));
     }
 
     return psd;
@@ -79,17 +57,15 @@ double computeFDD(const std::vector<double>& psd, int fs, int nfft) {
     return (maxIndex * fs) / double(nfft);
 }
 
-std::vector<double> computeSpectrogramFDD(
-    const std::vector<double>& data, int fs, int nfft, int step) {
-    
-    int windowSize = nfft; // Tamaño de la ventana.
-    std::vector<double> fddValues; // Almacena el FDD para cada ventana.
+// Función para calcular espectrograma basado en FDD
+std::vector<double> computeSpectrogramFDD(const std::vector<double>& data, int fs, int nfft, int step) {
+    int windowSize = nfft;
+    std::vector<double> fddValues;
 
-    // Procesar ventanas consecutivas.
     for (size_t start = 0; start + windowSize <= data.size(); start += step) {
         std::vector<double> window(data.begin() + start, data.begin() + start + windowSize);
 
-        // Aplicar ventana de Hanning.
+        // Aplicar ventana de Hanning
         for (size_t i = 0; i < windowSize; ++i) {
             window[i] *= 0.5 * (1 - cos(2 * M_PI * i / (windowSize - 1)));
         }
@@ -99,30 +75,27 @@ std::vector<double> computeSpectrogramFDD(
         fftw_plan plan = fftw_plan_dft_r2c_1d(nfft, window.data(), out, FFTW_ESTIMATE);
         fftw_execute(plan);
 
-        // Calcular FDD directamente desde la FFT.
+        // Calcular FDD
         std::vector<double> psd(nfft / 2 + 1, 0.0);
         for (int i = 0; i < nfft / 2 + 1; ++i) {
             psd[i] = (out[i][0] * out[i][0] + out[i][1] * out[i][1]) / (windowSize * fs);
         }
+
         fftw_destroy_plan(plan);
         fftw_free(out);
 
-        // Encontrar la frecuencia dominante.
         int maxIndex = std::distance(psd.begin(), std::max_element(psd.begin(), psd.end()));
         double fdd = (maxIndex * fs) / double(nfft);
-
-        // Guardar FDD.
         fddValues.push_back(fdd);
     }
 
     return fddValues;
 }
 
-
-Napi::Value ComputeResults(const Napi::CallbackInfo& info) {
+// Función para calcular PSD (expuesta a Node.js)
+Napi::Value ComputePSD(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
-    // Obtener parámetros desde Node.js
     Napi::Array inputData = info[0].As<Napi::Array>();
     std::vector<double> data;
     for (size_t i = 0; i < inputData.Length(); ++i) {
@@ -131,28 +104,62 @@ Napi::Value ComputeResults(const Napi::CallbackInfo& info) {
     int fs = info[1].As<Napi::Number>().Int32Value();
     int nfft = info[2].As<Napi::Number>().Int32Value();
 
-    // Calcular PSD, FDD, y espectrograma
     auto psd = computeWelch(data, fs, nfft);
-    auto fdd = computeFDD(psd, fs, nfft);
-    auto spectrogram = computeSpectrogramFDD(data, fs, nfft, nfft / 4);
 
-    // Crear objeto JSON para regresar a Node.js
-    Napi::Object result = Napi::Object::New(env);
     Napi::Array psdArray = Napi::Array::New(env, psd.size());
-    for (size_t i = 0; i < psd.size(); ++i) psdArray[i] = psd[i];
-    result.Set("psd", psdArray);
-    result.Set("fdd", fdd);
+    for (size_t i = 0; i < psd.size(); ++i) {
+        psdArray[i] = psd[i];
+    }
 
-    Napi::Array spectrogramArray = Napi::Array::New(env, spectrogram.size());
-    for (size_t i = 0; i < spectrogram.size(); ++i) spectrogramArray[i] = spectrogram[i];
-    result.Set("spectrogram_fdd", spectrogramArray);
-
-    return result;
+    return psdArray;
 }
 
+// Función para calcular FDD (expuesta a Node.js)
+Napi::Value ComputeFDD(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    Napi::Array psdArray = info[0].As<Napi::Array>();
+    std::vector<double> psd;
+    for (size_t i = 0; i < psdArray.Length(); ++i) {
+        psd.push_back(psdArray.Get(i).As<Napi::Number>().DoubleValue());
+    }
+    int fs = info[1].As<Napi::Number>().Int32Value();
+    int nfft = info[2].As<Napi::Number>().Int32Value();
+
+    double fdd = computeFDD(psd, fs, nfft);
+
+    return Napi::Number::New(env, fdd);
+}
+
+// Función para calcular espectrograma (expuesta a Node.js)
+Napi::Value ComputeSpectrogramFDD(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    Napi::Array inputData = info[0].As<Napi::Array>();
+    std::vector<double> data;
+    for (size_t i = 0; i < inputData.Length(); ++i) {
+        data.push_back(inputData.Get(i).As<Napi::Number>().DoubleValue());
+    }
+    int fs = info[1].As<Napi::Number>().Int32Value();
+    int nfft = info[2].As<Napi::Number>().Int32Value();
+    int step = info[3].As<Napi::Number>().Int32Value();
+
+    auto spectrogram = computeSpectrogramFDD(data, fs, nfft, step);
+
+    Napi::Array spectrogramArray = Napi::Array::New(env, spectrogram.size());
+    for (size_t i = 0; i < spectrogram.size(); ++i) {
+        spectrogramArray[i] = spectrogram[i];
+    }
+
+    return spectrogramArray;
+}
+
+// Inicialización del módulo
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
-    exports.Set("computeResults", Napi::Function::New(env, ComputeResults));
+    exports.Set("computePSD", Napi::Function::New(env, ComputePSD));
+    exports.Set("computeFDD", Napi::Function::New(env, ComputeFDD));
+    exports.Set("computeSpectrogramFDD", Napi::Function::New(env, ComputeSpectrogramFDD));
     return exports;
 }
 
-NODE_API_MODULE(process_data, Init)
+NODE_API_MODULE(process_data_final, Init)

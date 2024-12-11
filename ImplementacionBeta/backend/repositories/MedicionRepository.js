@@ -166,6 +166,17 @@ class MedicionRepository {
     return medicion ? medicion: null;; // Retorna la medición encontrada o null si no hay resultados
   }
   
+  async procesarDatos(dataSensors) {
+    return dataSensors.reduce((acc, medicion) => {
+        const sensorId = medicion.sensor.idSensor;
+        if (!acc[sensorId]) {
+            acc[sensorId] = [];
+        }
+        acc[sensorId].push(medicion);
+        return acc;
+    }, {});
+    console.log('Datos agrupados por sensor:', agrupados);
+}
   
 
 }

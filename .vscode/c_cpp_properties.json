@@ -7,8 +7,7 @@
                 "${workspaceFolder}/ImplementacionBeta/backend/AnalysysFreq/include/mysql",
                 "${workspaceFolder}/ImplementacionBeta/backend/AnalysysFreq/include/fftw3",
                 "${workspaceFolder}/ImplementacionBeta/backend/AnalysysFreq/include/cppconn",
-                "${workspaceFolder}/ImplementacionBeta/backend/AnalysysFreq/include/node",
-                "${workspaceFolder}/node_modules/node-addon-api" 
+                "${workspaceFolder}/ImplementacionBeta/backend/AnalysysFreq/include/node/node-addon-api" 
             ],
             "defines": [
                 "_DEBUG",
