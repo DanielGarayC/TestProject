@@ -13,9 +13,16 @@
     <link rel="stylesheet" href="/assets/css/style.css" />
     <link rel="shortcut icon" href="/assets/images/favicon.png" />
     <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/heatmap.js"></script>
+
     <style>
         .content-wrapper{
             overflow-y: scroll !important; /* Asegura que haya scroll si es necesario */
+          }
+          #graficosModal {
+            width: 100%;
+            height: auto;
+            overflow: auto;
           }
     </style>
   </head>
@@ -122,8 +129,10 @@
     <script>
       // Parsear datos del backend
       const dataTipo1 = JSON.parse('<%- JSON.stringify(medicionTipo1.data_sensors || []) %>');
-      const analisisPorSensor = JSON.parse('<%- JSON.stringify(analisisPorSensor || []) %>');
-      console.log('AnalisisPorSensor:', analisisPorSensor);
+      const psdData = JSON.parse('<%- JSON.stringify(psdData || []) %>');
+      const fddData = JSON.parse('<%- JSON.stringify(fddData || []) %>');
+      const spectrogramData = JSON.parse('<%- JSON.stringify(spectrogramData || []) %>');
+
 
       // Función para procesar y agrupar datos por sensor
       function procesarDatos(datos) {
@@ -137,6 +146,20 @@
           }, {});
       }
   
+      //Reducir data pal espectrograma
+      function reducirEspectrograma(spectrogram, maxRows, maxCols) {
+          const filasReducidas = spectrogram.length > maxRows
+              ? spectrogram.filter((_, index) => index % Math.ceil(spectrogram.length / maxRows) === 0)
+              : spectrogram;
+
+          return filasReducidas.map(row => {
+              if (row.length > maxCols) {
+                  return row.filter((_, index) => index % Math.ceil(row.length / maxCols) === 0);
+              }
+              return row;
+          });
+      }
+
       // Crear gráficos dinámicamente para los datos de sensores
       function crearGraficosSensores(datosPorSensor, tipo) {
           const graficosDiv = document.getElementById('graficos');
@@ -165,84 +188,102 @@
       }
   
       // Crear gráficos dinámicamente para los análisis
-      function crearGraficosAnalisis(analisis) {
-          const graficosDiv = document.getElementById('graficosModal');
-          graficosDiv.innerHTML = ''; // Limpiar contenedor
-  
-          analisis.forEach(sensor => {
-              // PSD
-              const containerPSD = document.createElement('div');
-              containerPSD.style.width = '100%';
-              containerPSD.style.height = '400px';
-              graficosDiv.appendChild(containerPSD);
-  
-              Highcharts.chart(containerPSD, {
-                  chart: { type: 'line' },
-                  title: { text: `Sensor ${sensor.sensorId} - PSD` },
-                  xAxis: { title: { text: 'Frecuencia (Hz)' } },
-                  yAxis: { title: { text: 'Amplitud (dB)' } },
-                  series: [{ name: 'PSD', data: sensor.psd }],
-              });
-  
-              // FDD
-              const containerFDD = document.createElement('div');
-              containerFDD.style.width = '100%';
-              containerFDD.style.height = '400px';
-              graficosDiv.appendChild(containerFDD);
-  
-              Highcharts.chart(containerFDD, {
-                  chart: { type: 'column' },
-                  title: { text: `Sensor ${sensor.sensorId} - FDD` },
-                  xAxis: { categories: ['Frecuencia Dominante'], title: { text: '' } },
-                  yAxis: { title: { text: 'Frecuencia (Hz)' } },
-                  series: [{ name: 'FDD', data: [sensor.fdd] }],
-              });
-  
-              // Espectrograma
-              const containerSpectrogram = document.createElement('div');
-              containerSpectrogram.style.width = '100%';
-              containerSpectrogram.style.height = '400px';
-              graficosDiv.appendChild(containerSpectrogram);
-  
-              const minValue = Math.min(...spectrogram.flat());
-              const maxValue = Math.max(...spectrogram.flat());
+      function crearGraficosAnalisis(psdData, fddData, spectrogramData) {
+    const graficosDiv = document.getElementById('graficosModal');
+    graficosDiv.innerHTML = ''; // Limpiar contenedor
 
-              const spectrogramData = [];
-              for (let i = 0; i < spectrogram.length; i++) {
-                for (let j = 0; j < spectrogram[i].length; j++) {
-                  spectrogramData.push({ x: i, y: j, value: spectrogram[i][j] });
-                }
-              }
+    // Gráfico de PSD
+    psdData.forEach(sensor => {
+        const containerPSD = document.createElement('div');
+        containerPSD.style.width = '100%';
+        containerPSD.style.height = '400px';
+        graficosDiv.appendChild(containerPSD);
 
-              Highcharts.chart(containerSpectrogram, {
-                chart: { type: 'heatmap' },
-                title: { text: `Sensor ${sensor.sensorId} - Espectrograma` },
-                xAxis: {
-                  title: { text: 'Tiempo' },
-                  categories: Array.from({ length: numTimeWindows }, (_, i) => `T${i + 1}`)
-                },
-                yAxis: {
-                  title: { text: 'Frecuencia' },
-                  categories: Array.from({ length: numFrequencies }, (_, i) => `${i * 10} Hz`) // Ajusta las etiquetas
-                },
-                colorAxis: {
-                  min: Math.min(...spectrogram),
-                  max: Math.max(...spectrogram),
-                  stops: [
-                    [0, '#3060cf'], // Azul para valores bajos
-                    [0.5, '#fffbbc'], // Amarillo para valores medios
-                    [1, '#c4463a'] // Rojo para valores altos
-                  ]
-                },
-                series: [{
-                  name: 'Spectrogram',
-                  borderWidth: 1,
-                  data: spectrogramData, // Usa los datos transformados
-                  dataLabels: { enabled: false } // Puedes activarlo si lo prefieres
-                }]
-              });
-          });
-      }
+        Highcharts.chart(containerPSD, {
+            chart: { type: 'line' },
+            title: { text: `Sensor ${sensor.sensorId} - PSD` },
+            xAxis: { title: { text: 'Frecuencia (Hz)' } },
+            yAxis: { title: { text: 'Amplitud (dB)' } },
+            series: [{ name: 'PSD', data: sensor.psd }],
+        });
+    });
+
+    // Gráfico de FDD
+    fddData.forEach(sensor => {
+        const containerFDD = document.createElement('div');
+        containerFDD.style.width = '100%';
+        containerFDD.style.height = '400px';
+        graficosDiv.appendChild(containerFDD);
+
+        Highcharts.chart(containerFDD, {
+            chart: { type: 'column' },
+            title: { text: `Sensor ${sensor.sensorId} - FDD` },
+            xAxis: { categories: ['Frecuencia Dominante'], title: { text: '' } },
+            yAxis: { title: { text: 'Frecuencia (Hz)' } },
+            series: [{ name: 'FDD', data: [sensor.fdd] }],
+        });
+    });
+
+    
+
+    // Gráfico de Espectrograma
+    const maxRows = 100; // Máximo de filas para el espectrograma
+    const maxCols = 100; // Máximo de columnas para el espectrograma
+
+    spectrogramData.forEach(sensor => {
+        if (!Array.isArray(sensor.spectrogram) || sensor.spectrogram.length === 0 || 
+            !sensor.spectrogram.every(row => Array.isArray(row))) {
+            console.error(`Espectrograma no válido para el sensor ${sensor.sensorId}`);
+            return; // Salir si el espectrograma no es válido
+        }
+        const containerSpectrogram = document.createElement('div');
+        containerSpectrogram.style.width = '100%';
+        containerSpectrogram.style.height = '400px';
+        graficosDiv.appendChild(containerSpectrogram);
+
+
+        if (!Array.isArray(sensor.spectrogram) || sensor.spectrogram.length === 0) {
+            console.error(`Espectrograma vacío o inválido para el sensor ${sensor.sensorId}`);
+            return;
+        }
+
+        const spectrogramReducido = reducirEspectrograma(sensor.spectrogram, maxRows, maxCols);
+
+        const spectrogramValues = [];
+        for (let x = 0; x < spectrogramReducido.length; x++) {
+            for (let y = 0; y < spectrogramReducido[x].length; y++) {
+                spectrogramValues.push({ x, y, value: spectrogramReducido[x][y] });
+            }
+        }
+
+        console.log(spectrogramValues);
+
+        const minValue = Math.min(...spectrogramValues.map(d => d.value));
+        const maxValue = Math.max(...spectrogramValues.map(d => d.value));
+
+        Highcharts.chart(containerSpectrogram, {
+            chart: { type: 'heatmap' },
+            title: { text: `Sensor ${sensor.sensorId} - Espectrograma` },
+            xAxis: { title: { text: 'Tiempo (s)' } },
+            yAxis: { title: { text: 'Frecuencia (Hz)' } },
+            colorAxis: {
+                min: Math.min(...spectrogramValues.map(d => d.value)) || 0,
+                max: Math.max(...spectrogramValues.map(d => d.value)) || 1,
+                stops: [
+                    [0, '#3060cf'],
+                    [0.5, '#fffbbc'],
+                    [1, '#c4463a'],
+                ],
+            },
+            series: [{
+                name: 'Spectrogram',
+                borderWidth: 1,
+                data: spectrogramValues,
+                dataLabels: { enabled: false },
+              }],
+        });
+    });
+}
   
       // Procesar datos y crear gráficos para los sensores
       crearGraficosSensores(procesarDatos(dataTipo1), 1);
@@ -251,7 +292,7 @@
       const modalElement = document.getElementById('modalGraficas');
       modalElement.addEventListener('shown.bs.modal', () => {
           console.log('Modal abierto, cargando gráficos...');
-          crearGraficosAnalisis(analisisPorSensor); // Crear gráficas de análisis cuando se abra el modal
+          crearGraficosAnalisis(psdData, fddData, spectrogramData); // Crear gráficas de análisis cuando se abra el modal
       });
   </script>
     <!-- plugins:js -->

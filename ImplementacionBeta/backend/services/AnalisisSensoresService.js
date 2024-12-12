@@ -39,7 +39,6 @@ class AnalisisSensoresService {
       if (!data || data.length === 0) {
         throw new Error('Los datos de entrada para PSD están vacíos.');
       }
-      console.log(`Calculando PSD para ${data.length} datos con nfft=${this.nfft}`);
       return processDataNative.computePSD(data, this.fs, this.nfft);
     } catch (error) {
       console.error('Error al calcular el PSD:', error.message);
@@ -49,7 +48,6 @@ class AnalisisSensoresService {
 
   computeFDD(data) {
     try {
-      console.log('Calculando FDD para los datos:', data);
       return processDataNative.computeFDD(data, this.fs, this.nfft);
     } catch (error) {
       console.error('Error al calcular el FDD:', error.message);
@@ -60,7 +58,6 @@ class AnalisisSensoresService {
   calculateSpectrogram(data) {
     this.validateData(data, this.nfft);
     try {
-      console.log(`Calculando Espectrograma para ${data.length} datos con nfft=${this.nfft} y paso=${this.step}`);
       return processDataNative.computeSpectrogramFDD(data, this.fs, this.nfft, this.step);
     } catch (error) {
       console.error('Error al calcular el espectrograma:', error.message);
