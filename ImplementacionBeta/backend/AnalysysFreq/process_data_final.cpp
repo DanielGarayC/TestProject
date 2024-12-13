@@ -42,10 +42,8 @@ std::vector<double> computeWelch(const std::vector<double>& data, int fs, int nf
         fftw_destroy_plan(plan);
         fftw_free(out);
     }
-    const double epsilon = 1e-12;
     for (auto& p : psd) {
         p /= numWindows;
-        p = 10 * log10(std::max(p, epsilon));
     }
 
     return psd;
