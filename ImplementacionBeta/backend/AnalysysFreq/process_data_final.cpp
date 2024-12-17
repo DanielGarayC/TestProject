@@ -11,7 +11,15 @@
 #include <fftw3.h>
 #include <napi.h>
 #include <string>
+#include <algorithm>
 
+
+void applyHanningWindow(std::vector<double>& data) {
+    size_t N = data.size();
+    for (size_t i = 0; i < N; ++i) {
+        data[i] *= 0.5 * (1 - cos(2 * M_PI * i / (N - 1)));
+    }
+}
 // Función para calcular PSD usando el método de Welch
 std::vector<double> computeWelch(const std::vector<double>& data, int fs, int nfft) {
     int windowSize = nfft;
@@ -49,11 +57,41 @@ std::vector<double> computeWelch(const std::vector<double>& data, int fs, int nf
     return psd;
 }
 
-// Función para calcular FDD
-double computeFDD(const std::vector<double>& psd, int fs, int nfft) {
-    int maxIndex = std::distance(psd.begin(), std::max_element(psd.begin(), psd.end()));
-    return (maxIndex * fs) / double(nfft);
+std::vector<double> computeFDD(const std::vector<double>& signal, int fs, int nfft) {
+    std::vector<double> fdd(nfft / 2 + 1, 0.0); // Inicializa el FDD con ceros
+    int step = nfft / 2; // 50% de solapamiento
+    int numWindows = 0;
+
+    for (size_t start = 0; start + nfft <= signal.size(); start += step) {
+        std::vector<double> window(signal.begin() + start, signal.begin() + start + nfft);
+
+        // Aplicar ventana de Hanning
+        applyHanningWindow(window);
+
+        // FFT
+        fftw_complex* out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (nfft / 2 + 1));
+        fftw_plan plan = fftw_plan_dft_r2c_1d(nfft, window.data(), out, FFTW_ESTIMATE);
+        fftw_execute(plan);
+
+        // Acumular espectro de amplitud (lineal)
+        for (int i = 0; i < nfft / 2 + 1; ++i) {
+            double amplitude = sqrt(out[i][0] * out[i][0] + out[i][1] * out[i][1]);
+            fdd[i] += amplitude;
+        }
+
+        fftw_destroy_plan(plan);
+        fftw_free(out);
+        numWindows++;
+    }
+
+    // Promediar los valores acumulados
+    for (auto& value : fdd) {
+        value /= numWindows;
+    }
+
+    return fdd; // Devuelve el FDD en escala lineal
 }
+
 
 // Función para calcular espectrograma basado en FDD
 std::vector<std::vector<double>> computeSpectrogramFDD(const std::vector<double>& data, int fs, int nfft, int step) {
@@ -111,21 +149,41 @@ Napi::Value ComputePSD(const Napi::CallbackInfo& info) {
     return psdArray;
 }
 
-// Función para calcular FDD (expuesta a Node.js)
 Napi::Value ComputeFDD(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
-    Napi::Array psdArray = info[0].As<Napi::Array>();
-    std::vector<double> psd;
-    for (size_t i = 0; i < psdArray.Length(); ++i) {
-        psd.push_back(psdArray.Get(i).As<Napi::Number>().DoubleValue());
+    // Validación de parámetros
+    if (info.Length() < 3 || !info[0].IsArray() || !info[1].IsNumber() || !info[2].IsNumber()) {
+        Napi::TypeError::New(env, "Argumentos inválidos: Se espera (Array, fs, nfft)").ThrowAsJavaScriptException();
+        return env.Null();
     }
+
+    // Leer datos de entrada
+    Napi::Array inputData = info[0].As<Napi::Array>();
+    std::vector<double> signal;
+    for (size_t i = 0; i < inputData.Length(); ++i) {
+        signal.push_back(inputData.Get(i).As<Napi::Number>().DoubleValue());
+    }
+
     int fs = info[1].As<Napi::Number>().Int32Value();
     int nfft = info[2].As<Napi::Number>().Int32Value();
 
-    double fdd = computeFDD(psd, fs, nfft);
+    // Validar parámetros
+    if (signal.size() < (size_t)nfft || fs <= 0 || nfft <= 0) {
+        Napi::TypeError::New(env, "Parámetros inválidos: El tamaño de la señal o nfft es incorrecto").ThrowAsJavaScriptException();
+        return env.Null();
+    }
 
-    return Napi::Number::New(env, fdd);
+    // Calcular FDD
+    std::vector<double> fdd = computeFDD(signal, fs, nfft);
+
+    // Convertir el resultado a Napi::Array
+    Napi::Array result = Napi::Array::New(env, fdd.size());
+    for (size_t i = 0; i < fdd.size(); ++i) {
+        result.Set(i, Napi::Number::New(env, fdd[i]));
+    }
+
+    return result;
 }
 
 // Función para calcular espectrograma (expuesta a Node.js)

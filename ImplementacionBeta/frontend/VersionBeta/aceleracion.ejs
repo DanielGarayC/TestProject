@@ -243,26 +243,65 @@
         });
       }
 
+      // Función para inicializar o actualizar una gráfica FDD
+      function inicializarGraficaFDD(containerId, sensorData, escala = 'lineal') {
+        const dataEscala = escala === 'dB'
+          ? sensorData.fdd.map((v) => (v > 0 ? 10 * Math.log10(v) : -120)) // Convertir a dB
+          : sensorData.fdd; // Escala lineal
+
+        Highcharts.chart(containerId, {
+          chart: { type: 'line' },
+          title: { text: `Sensor ${sensorData.sensorId} - FDD (${escala})` },
+          xAxis: { title: { text: 'Index' } },
+          yAxis: { title: { text: escala === 'dB' ? 'Amplitud (dB)' : 'Amplitud (Lineal)' } },
+          series: [{ name: 'Frequency Domain Decomposition', data: dataEscala }],
+        });
+      }
+
+      // Crear gráficos FDD con selector de escala
+      function crearGraficosFDD(fddData) {
+        const fddDiv = document.getElementById('graficosRestantes');
+        fddDiv.innerHTML = ''; // Limpiar contenedor
+
+        fddData.forEach((sensor) => {
+          // Crear selector de escala para cada sensor
+          const selectorDiv = document.createElement('div');
+          selectorDiv.innerHTML = `
+            <label for="escalaFDD${sensor.sensorId}">Escala para Sensor ${sensor.sensorId}:</label>
+            <select id="escalaFDD${sensor.sensorId}" class="selector-escala">
+              <option value="lineal" selected>Lineal</option> <!-- Escala por defecto -->
+              <option value="dB">dB</option>
+            </select>
+          `;
+          fddDiv.appendChild(selectorDiv);
+
+          // Crear contenedor para la gráfica FDD
+          const containerFDD = document.createElement('div');
+          containerFDD.id = `graficoFDD${sensor.sensorId}`;
+          containerFDD.style.width = '100%';
+          containerFDD.style.height = '400px';
+          fddDiv.appendChild(containerFDD);
+
+          // Inicializar gráfica en escala lineal
+          inicializarGraficaFDD(containerFDD.id, sensor, 'lineal');
+
+          // Configurar evento para actualizar la escala
+          const selector = document.getElementById(`escalaFDD${sensor.sensorId}`);
+          selector.value = 'lineal'; // Aseguramos que el selector coincida con la escala inicial
+          selector.addEventListener('change', (e) => {
+            const escala = e.target.value;
+            inicializarGraficaFDD(containerFDD.id, sensor, escala);
+          });
+        });
+      }
+
       // Crear gráficos FDD y espectrograma
       function crearGraficosAnalisis(psdData, fddData, spectrogramData) {
         const fddDiv = document.getElementById('graficosRestantes');
         fddDiv.innerHTML = ''; // Limpiar contenedor
 
         // Crear gráficos FDD
-        fddData.forEach((sensor) => {
-          const containerFDD = document.createElement('div');
-          containerFDD.style.width = '100%';
-          containerFDD.style.height = '400px';
-          fddDiv.appendChild(containerFDD);
-
-          Highcharts.chart(containerFDD, {
-            chart: { type: 'column' },
-            title: { text: `Sensor ${sensor.sensorId} - FDD` },
-            xAxis: { categories: ['Frecuencia Dominante'], title: { text: '' } },
-            yAxis: { title: { text: 'Frecuencia (Hz)' } },
-            series: [{ name: 'FDD', data: [sensor.fdd] }],
-          });
-        });
+        crearGraficosFDD(fddData);
 
         // Crear gráficos de espectrograma
         spectrogramData.forEach((sensor) => {
@@ -297,7 +336,7 @@
                   [0, '#000000'],  // Negro (valores mínimos)
                   [0.25, '#00008B'], // Azul muy oscuro
                   [0.5, '#0000FF'],  // Azul intermedio
-                  [0.75, '#87CEEB'],    // Azul claro 
+                  [0.75, '#00FFFF'],    // Azul claro 
                   [1, '#FFFFFF']    // Blanco (valores máximos)
 
               ],

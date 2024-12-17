@@ -162,7 +162,7 @@ class MedicionController {
               const psd = AnalisisSensoresService.computePSD(sensorData);
               const fdd = AnalisisSensoresService.computeFDD(sensorData);
               const spectrogram = AnalisisSensoresService.calculateSpectrogram(sensorData);
-              console.log(`Espectrograma calculado para sensor ${sensorId}:`, spectrogram);
+              console.log(`FDD calculado para sensor ${sensorId}:`, fdd);
               if (!Array.isArray(spectrogram) || !spectrogram.every(row => Array.isArray(row))) {
                 console.error(`Espectrograma no válido para el sensor ${sensorId}`);
                 return { sensorId, error: 'Espectrograma no válido' };
@@ -216,7 +216,7 @@ class MedicionController {
           sensorId: sensor.sensorId,
           fdd: sensor.fdd,
         }));
-
+        console.log(fddData)
         const spectrogramData = analisisPorSensor.map(sensor => ({
           sensorId: sensor.sensorId,
           spectrogram: sensor.spectrogram,
