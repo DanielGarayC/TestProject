@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Gráficas PSD, FDD y Espectrograma</title>
+    <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <link rel="stylesheet" href="/assets/vendors/font-awesome/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css" />
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <link rel="shortcut icon" href="/assets/images/favicon.png" />
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/heatmap.js"></script>
+    <style>
+        #graficosContainer {
+            width: 100%;
+            height: auto;
+            overflow: auto;
+        }
+        .selector-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="container-scroller">
+        <nav class="sidebar sidebar-offcanvas" id="sidebar">
+          <div class="text-center sidebar-brand-wrapper d-flex align-items-center">
+          </div>
+          <ul class="nav">
+            <li class="nav-item">
+              <a class="nav-link" href="/pagPrincipal">
+                <i class="mdi mdi-home menu-icon"></i>
+                <span class="menu-title">Inicio</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <div class="container-fluid page-body-wrapper">
+          <div id="theme-settings" class="settings-panel">
+            <i class="settings-close mdi mdi-close"></i>
+            <p class="settings-heading">SIDEBAR SKINS</p>
+            <div class="sidebar-bg-options selected" id="sidebar-default-theme">
+              <div class="img-ss rounded-circle bg-light border mr-3"></div> Default
+            </div>
+            <div class="sidebar-bg-options" id="sidebar-dark-theme">
+              <div class="img-ss rounded-circle bg-dark border mr-3"></div> Dark
+            </div>
+            <p class="settings-heading mt-2">HEADER SKINS</p>
+            <div class="color-tiles mx-0 px-4">
+              <div class="tiles light"></div>
+              <div class="tiles dark"></div>
+            </div>
+          </div>
+          <nav class="navbar col-lg-12 col-12 p-lg-0 fixed-top d-flex flex-row">
+            <div class="navbar-menu-wrapper d-flex align-items-stretch justify-content-between">
+              <a class="navbar-brand brand-logo-mini align-self-center d-lg-none" href="index.html"><img src="/assets/images/logo-mini.svg" alt="logo" /></a>
+              <button class="navbar-toggler navbar-toggler align-self-center mr-2" type="button" data-toggle="minimize">
+                <i class="mdi mdi-menu"></i>
+              </button>
+              
+             
+              <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
+                <span class="mdi mdi-menu"></span>
+              </button>
+            </div>
+          </nav>
+    <div class="main-panel">
+      <h1>Gráficas PSD, FDD y Espectrograma</h1>
+      <div class="content-wrapper pb-0">
+        <label for="tipoGrafica">Tipo de Gráfica:</label>
+        <select id="tipoGrafica">
+          <option value="PSD">PSD</option>
+          <option value="FDD">FDD</option>
+        </select>
+        <label for="escala">Escala:</label>
+        <select id="escala">
+          <option value="lineal">Lineal</option>
+          <option value="dB">dB</option>
+        </select>
+      </div>
+      <div id="graficosContainer">
+        <div id="graficoPrincipal" style="width: 100%; height: 400px;"></div>
+        <h3>Espectrograma</h3>
+        <div class="selector-container">
+          <label for="escalaEspectrograma">Escala:</label>
+          <select id="escalaEspectrograma">
+            <option value="lineal">Lineal</option>
+            <option value="dB">dB</option>
+          </select>
+        </div>
+        <div id="graficoEspectrograma" style="width: 100%; height: 400px;"></div>
+      </div>
+    </div>
+
+    <script>
+      const psdData = JSON.parse('<%- JSON.stringify(psdData || []) %>');
+      const fddData = JSON.parse('<%- JSON.stringify(fddData || []) %>');
+      const spectrogramData = JSON.parse('<%- JSON.stringify(spectrogramData || []) %>');
+
+      function inicializarGraficaPrincipal(tipo, escala) {
+        const data = tipo === 'PSD' ? psdData : fddData;
+        const series = data.map(sensor => ({
+          name: `Sensor ${sensor.sensorId}`,
+          data: escala === 'dB' 
+            ? sensor[tipo.toLowerCase()].map(v => (v > 0 ? 10 * Math.log10(v) : -120)) 
+            : sensor[tipo.toLowerCase()]
+        }));
+
+        Highcharts.chart('graficoPrincipal', {
+          chart: { type: 'line' },
+          title: { text: `${tipo} (${escala})` },
+          xAxis: { title: { text: 'Index' } },
+          yAxis: { title: { text: escala === 'dB' ? 'Amplitud (dB)' : 'Amplitud (Lineal)' } },
+          series
+        });
+      }
+
+      document.getElementById('tipoGrafica').addEventListener('change', e => {
+        const tipo = e.target.value;
+        const escala = document.getElementById('escala').value;
+        inicializarGraficaPrincipal(tipo, escala);
+      });
+
+      document.getElementById('escala').addEventListener('change', e => {
+        const escala = e.target.value;
+        const tipo = document.getElementById('tipoGrafica').value;
+        inicializarGraficaPrincipal(tipo, escala);
+      });
+
+      function inicializarEspectrograma(escala) {
+        const sensor = spectrogramData[0]; // Muestra solo el primer sensor
+        const spectrogramValues = [];
+        for (let x = 0; x < sensor.spectrogram.length; x++) {
+          for (let y = 0; y < sensor.spectrogram[x].length; y++) {
+            let value = sensor.spectrogram[x][y];
+            value = escala === 'dB' && value > 0 ? 10 * Math.log10(value) : value;
+            spectrogramValues.push({ x, y, value });
+          }
+        }
+
+        Highcharts.chart('graficoEspectrograma', {
+          chart: { type: 'heatmap' },
+          title: { text: `Espectrograma (${escala})` },
+          xAxis: { title: { text: 'Tiempo' } },
+          yAxis: { title: { text: 'Frecuencia' } },
+          colorAxis: {
+            stops: [
+                  [0, '#000000'],    // Azul muy oscuro (inicio)
+                  [0.2, '#0000AA'], // Azul intenso
+                  [0.55, '#0000FF'],  // Azul intermedio
+                  [0.75, '#669BFF'], // Azul claro
+                  [0.9, '#FFFFFF']     // Blanco (máximo)
+            ]
+          },
+          series: [{
+            name: 'Espectrograma',
+            borderWidth: 0,
+            data: spectrogramValues.map(d => [d.x, d.y, d.value]),
+            dataLabels: { enabled: false }
+          }]
+        });
+      }
+
+      document.getElementById('escalaEspectrograma').addEventListener('change', e => {
+        const escala = e.target.value;
+        inicializarEspectrograma(escala);
+      });
+
+      inicializarGraficaPrincipal('PSD', 'lineal');
+      inicializarEspectrograma('lineal');
+    </script>
+  </body>
+</html>

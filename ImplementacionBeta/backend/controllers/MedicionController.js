@@ -236,7 +236,74 @@ class MedicionController {
     }
 }
   
-  
+async mostrarGraficasMedicionPorIdEnVista(req, res) {
+  try{
+    const {id} = req.params;
+
+        if (!id || isNaN(Number(id))) {
+          return res.status(400).send('El parámetro "id" es requerido y debe ser un número.');
+        }
+        const medicionTipo1Graficas = await MedicionRepository.getSimpleData(id);
+        const datosPorSensor = await MedicionRepository.procesarDatos(medicionTipo1Graficas.data_sensors);
+
+        const analisisPorSensor = Object.keys(datosPorSensor).map(sensorId => {
+          const sensorData = datosPorSensor[sensorId].map(d => d.valor);
+          console.log(`Procesando análisis para el sensor ${sensorId}`);
+      
+          try {
+              const psd = AnalisisSensoresService.computePSD(sensorData);
+              const fdd = AnalisisSensoresService.computeFDD(sensorData);
+              const spectrogram = AnalisisSensoresService.calculateSpectrogram(sensorData);
+              //console.log(`FDD calculado para sensor ${sensorId}:`, fdd);
+              if (!Array.isArray(spectrogram) || !spectrogram.every(row => Array.isArray(row))) {
+                console.error(`Espectrograma no válido para el sensor ${sensorId}`);
+                return { sensorId, error: 'Espectrograma no válido' };
+              }
+              //console.log(`Resultados para sensor ${sensorId}:`, { psd, fdd, spectrogram });
+
+              return {
+                sensorId,
+                psd,
+                fdd,
+                spectrogram,
+              };
+            } catch (error) {
+              console.error(`Error en el análisis para el sensor ${sensorId}:`, error);
+              return {
+                sensorId,
+                psd: [],
+                fdd: null,
+                spectrogram: [],
+                error: error.message,
+              };
+            }
+          });
+              // Separar los datos por tipo para el front-end
+              const psdData = analisisPorSensor.map(sensor => ({
+                sensorId: sensor.sensorId,
+                psd: sensor.psd,
+              }));
+
+              const fddData = analisisPorSensor.map(sensor => ({
+                sensorId: sensor.sensorId,
+                fdd: sensor.fdd,
+              }));
+              //console.log(fddData)
+              const spectrogramData = analisisPorSensor.map(sensor => ({
+                sensorId: sensor.sensorId,
+                spectrogram: sensor.spectrogram,
+              }));
+
+              res.render('VersionBeta/aceleracionGraficas', {
+                id,
+                psdData,
+                fddData,
+                spectrogramData });
+  }catch (err){
+    console.error('Error al mostrar gráficas:', err);
+    res.status(500).json({ message: 'Error al mostrar gráficas', error: err.message });
+  }
+}
 
 }
 
