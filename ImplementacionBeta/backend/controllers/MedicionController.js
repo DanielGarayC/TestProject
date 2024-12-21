@@ -77,21 +77,40 @@ class MedicionController {
 //Mediciones por tipo
   async obtenerMedicionesPorTipo(req, res) {
     try {
-      const idTipoMedicion = req.params.idTipoMedicion; // Obtenemos el idTipo de la URL
-      const mediciones = await MedicionRepository.findMedicionesByTipo(idTipoMedicion);
+      const idTipoMedicion = req.params.idTipoMedicion; // Obtenemos el tipo de medición de la URL
+      const { fecha } = req.query; // Capturamos la fecha desde los parámetros de consulta (query)
+      let mediciones;
 
-      if (!mediciones || mediciones.length === 0) {
-        return res.status(404).send('No se encontraron mediciones para el tipo especificado.');
+      if (fecha) {
+        // Si hay un filtro de fecha, buscamos mediciones específicas
+        mediciones = await MedicionRepository.findMedicionesPorFechaYTipo(idTipoMedicion, fecha);
+      } else {
+        // De lo contrario, mostramos todas las mediciones del tipo
+        mediciones = await MedicionRepository.findMedicionesByTipo(idTipoMedicion);
       }
 
-      const titulo = `Mediciones  ${idTipoMedicion}`;
+      // Comprobar si no hay mediciones
+      if (!mediciones || mediciones.length === 0) {
+        return res.status(404).send('No se encontraron mediciones para el tipo o la fecha especificados.');
+      }
 
-      res.render('VersionBeta/medicionPorTipo', { mediciones, titulo, idTipoMedicion });
+      // Título y renderizado
+      const titulo = `Mediciones del tipo ${idTipoMedicion}`;
+      res.render('VersionBeta/medicionPorTipo', {
+        mediciones,
+        titulo,
+        idTipoMedicion,
+        fechaFiltro: fecha || '', // Pasamos la fecha seleccionada al EJS
+      });
     } catch (err) {
-      console.error('Error al obtener las mediciones:', err);
-      res.status(500).json({ message: 'Error al mostrar las mediciones', error: err.message });
+      console.error('Error al obtener mediciones:', err);
+      res.status(500).json({
+        message: 'Error al mostrar las mediciones',
+        error: err.message,
+      });
     }
   }
+
 
 
   async redirigirPrimeraMedicion(req, res) {

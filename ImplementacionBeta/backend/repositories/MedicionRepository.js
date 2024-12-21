@@ -1,4 +1,5 @@
 const { getRepository } = require('typeorm');
+const {Between } = require('typeorm'); 
 const Medicion = require('../entities/Medicion');
 
 class MedicionRepository {
@@ -141,6 +142,31 @@ class MedicionRepository {
   
     return ultimaMedicion ? ultimaMedicion : null; // Devolver la última medición encontrada
   }
+  
+
+  async findMedicionesPorFechaYTipo(idTipoMedicion, fecha) {
+    const repository = this.getRepository();
+  
+    // Configurar inicio y fin del día
+    const inicioFecha = new Date(fecha);
+    inicioFecha.setHours(0, 0, 0, 0);
+    const finFecha = new Date(fecha);
+    finFecha.setHours(23, 59, 59, 999);
+  
+    // Buscar mediciones dentro del rango de la fecha para un tipo específico
+    return await repository.find({
+      where: {
+        tipomedicion: { idTipoMedicion },
+        fecha_hora: Between(inicioFecha, finFecha),
+      },
+      order: {
+        fecha_hora: 'DESC', // Ordenar por fecha más reciente primero
+      },
+    });
+  }
+  
+
+
   
   async findMedicionPorHoraYTipo({ fecha, idTipoMedicion }) {
     const repository = this.getRepository();
