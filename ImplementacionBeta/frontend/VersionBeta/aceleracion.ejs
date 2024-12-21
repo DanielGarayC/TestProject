@@ -12,14 +12,15 @@
     <link rel="stylesheet" href="/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css" />
     <link rel="stylesheet" href="/assets/css/style.css" />
     <link rel="shortcut icon" href="/assets/images/favicon.png" />
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="https://code.highcharts.com/modules/heatmap.js"></script>
+
+    <!-- Highcharts Scripts with Boost -->
+    <script src="https://code.highcharts.com/highcharts.js" defer></script>
+    <script src="https://code.highcharts.com/modules/boost.js" defer></script>
 
     <style>
-        .content-wrapper{
+        .content-wrapper {
             overflow-y: scroll !important; /* Asegura que haya scroll si es necesario */
-          }
-          
+        }
     </style>
   </head>
   <body>
@@ -58,8 +59,6 @@
             <button class="navbar-toggler navbar-toggler align-self-center mr-2" type="button" data-toggle="minimize">
               <i class="mdi mdi-menu"></i>
             </button>
-            
-           
             <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
               <span class="mdi mdi-menu"></span>
             </button>
@@ -67,17 +66,15 @@
         </nav>
         <div class="main-panel">
             <div class="content-wrapper pb-0">
-
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1 class="mb-0">Mediciones Detalladas</h1>
                     <a href="/graficas/<%= medicionTipo1.idMedicion%>" class="btn btn-primary">
                       Ver Gráficas PSD, FDD y Espectrograma
                     </a>
                     <a href="/tipoMedicion/1" class="btn btn-info">Regresar</a>
-                    
                 </div>
                 <p>
-                    Medición de: 
+                    Medición de:
                     <%= new Date(medicionTipo1.fecha_hora).toLocaleDateString('es-PE', { 
                       weekday: 'long', 
                       year: 'numeric', 
@@ -89,7 +86,7 @@
                       minute: '2-digit', 
                       second: '2-digit' 
                     }) %>
-                  </p>
+                </p>
                 <div id="data-container"></div>
                 <div id="graficos"></div>
                 <div class="sensor-values">
@@ -97,87 +94,82 @@
                   <p><strong><%= valorTemperatura.nombre %>: </strong><%= valorTemperatura.valor %></p>
                   <p><strong><%= valorHumedad.nombre %>: </strong><%= valorHumedad.valor %></p>
               </div>
-                
-            
             </div>
         </div>
         <!-- main-panel ends -->
       </div>
       <!-- page-body-wrapper ends -->
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- container-scroller -->
     <script>
-      // Parsear datos del backend
-      const dataTipo1 = JSON.parse('<%- JSON.stringify(medicionTipo1.data_sensors || []) %>');
-      const psdData = JSON.parse('<%- JSON.stringify(psdData || []) %>');
-      const fddData = JSON.parse('<%- JSON.stringify(fddData || []) %>');
-      const spectrogramData = JSON.parse('<%- JSON.stringify(spectrogramData || []) %>');
+      document.addEventListener("DOMContentLoaded", () => {
+        // Parsear datos del backend
+        const dataTipo1 = JSON.parse('<%- JSON.stringify(medicionTipo1.data_sensors || []) %>');
 
-
-      // Función para procesar y agrupar datos por sensor
-      function procesarDatos(datos) {
+        function procesarDatos(datos) {
           return datos.reduce((acc, medicion) => {
-              const sensorId = medicion.sensor.idSensor;
-              if (!acc[sensorId]) {
-                  acc[sensorId] = [];
-              }
-              acc[sensorId].push(medicion);
-              return acc;
+            const sensorId = medicion.sensor.idSensor;
+            if (!acc[sensorId]) {
+              acc[sensorId] = [];
+            }
+            acc[sensorId].push(medicion.valor);
+            return acc;
           }, {});
-      }
-  
-      
+        }
 
-      // Crear gráficos dinámicamente para los datos de sensores
-      function crearGraficosSensores(datosPorSensor, tipo) {
+        function crearGraficosSensores(datosPorSensor) {
           const graficosDiv = document.getElementById('graficos');
           graficosDiv.innerHTML = ''; // Limpiar contenedor
-  
+
           Object.keys(datosPorSensor).forEach(sensorId => {
-              const sensorData = datosPorSensor[sensorId];
-              const valores = sensorData.map(medicion => medicion.valor);
-              const indices = sensorData.map((_, i) => i + 1);
-  
-              // Crear un contenedor para cada gráfico
-              const graficoDiv = document.createElement('div');
-              graficoDiv.style.width = '100%';
-              graficoDiv.style.height = '400px';
-              graficosDiv.appendChild(graficoDiv);
-  
-              // Inicializar el gráfico
-              Highcharts.chart(graficoDiv, {
-                  chart: { type: 'line', height: 400 },
-                  title: { text: `Mediciones Tipo ${tipo} - Sensor ${sensorId}` },
-                  xAxis: { categories: indices, title: { text: 'Index' } },
-                  yAxis: { title: { text: 'Valor' } },
-                  series: [{ name: `Sensor ${sensorId}`, data: valores, lineWidth: 1 }],
-              });
+            const sensorData = datosPorSensor[sensorId];
+
+            const graficoDiv = document.createElement('div');
+            graficoDiv.style.width = '100%';
+            graficoDiv.style.height = '400px';
+            graficosDiv.appendChild(graficoDiv);
+
+            Highcharts.chart(graficoDiv, {
+              chart: {
+                type: 'line',
+                zoomType: 'x',
+                height: 400
+              },
+              title: {
+                text: `Mediciones - Sensor ${sensorId}`
+              },
+              boost: {
+                useGPUTranslations: true,
+                usePreAllocated: true
+              },
+              xAxis: {
+                categories: sensorData.map((_, i) => i + 1),
+                title: {
+                  text: 'Index'
+                }
+              },
+              yAxis: {
+                title: {
+                  text: 'Valor'
+                }
+              },
+              series: [{
+                name: `Sensor ${sensorId}`,
+                data: sensorData,
+                lineWidth: 1
+              }]
+            });
           });
-      }
+        }
 
-      // Procesar datos y crear gráficos para los sensores
-      crearGraficosSensores(procesarDatos(dataTipo1), 1);
-  
-  </script>
-    <!-- plugins:js -->
-    <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page -->
-    <script src="/assets/vendors/chart.js/Chart.min.js"></script>
-    <script src="/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
-    <script src="/assets/vendors/flot/jquery.flot.js"></script>
-    <script src="/assets/vendors/flot/jquery.flot.resize.js"></script>
-    <script src="/assets/vendors/flot/jquery.flot.categories.js"></script>
-    <script src="/assets/vendors/flot/jquery.flot.fillbetween.js"></script>
-    <script src="/assets/vendors/flot/jquery.flot.stack.js"></script>
-    <script src="/assets/vendors/flot/jquery.flot.pie.js"></script>
-    <!-- End plugin js for this page -->
-    <!-- inject:js -->
-    <script src="/assets/js/off-canvas.js"></script>
-    <script src="/assets/js/hoverable-collapse.js"></script>
-    <script src="/assets/js/misc.js"></script>
+        const datosPorSensor = procesarDatos(dataTipo1);
+        crearGraficosSensores(datosPorSensor);
+      });
+    </script>
 
+    <script src="/assets/vendors/js/vendor.bundle.base.js" defer></script>
+    <script src="/assets/js/off-canvas.js" async></script>
+    <script src="/assets/js/hoverable-collapse.js" defer></script>
+    <script src="/assets/js/misc.js" defer></script>
   </body>
 </html>

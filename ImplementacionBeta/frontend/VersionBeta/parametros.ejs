@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -13,11 +12,13 @@
     <link rel="stylesheet" href="/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css" />
     <link rel="stylesheet" href="/assets/css/style.css" />
     <link rel="shortcut icon" href="/assets/images/favicon.png" />
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Highcharts Scripts with Boost -->
+    <script src="https://code.highcharts.com/highcharts.js" defer></script>
+    <script src="https://code.highcharts.com/modules/boost.js" defer></script>
     <style>
-        .content-wrapper{
+        .content-wrapper {
             overflow-y: scroll !important; /* Asegura que haya scroll si es necesario */
-          }
+        }
     </style>
   </head>
   <body>
@@ -56,8 +57,6 @@
             <button class="navbar-toggler navbar-toggler align-self-center mr-2" type="button" data-toggle="minimize">
               <i class="mdi mdi-menu"></i>
             </button>
-            
-           
             <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
               <span class="mdi mdi-menu"></span>
             </button>
@@ -87,9 +86,6 @@
                 <div id="data-container" data-mediciones='<%- JSON.stringify(medicion.data_sensors || []) %>'></div>
 
                 <div id="graficos"></div>
-
-                
-
             </div>
         </div>
         <!-- main-panel ends -->
@@ -98,83 +94,81 @@
     </div>
     <!-- container-scroller -->
     <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // Verifica que Highcharts esté cargado
+        if (typeof Highcharts === 'undefined') {
+          console.error('Highcharts no está definido. Verifica la carga del script.');
+          return;
+        }
+
         // Obtener los datos desde el atributo data-mediciones
         const dataContainer = document.getElementById('data-container');
         const mediciones = JSON.parse(dataContainer.getAttribute('data-mediciones'));
 
         if (!mediciones || mediciones.length === 0) {
-            console.error("No hay datos disponibles para graficar.");
-        } else {
-            // Agrupar datos por idSensor
-            const datosPorSensor = mediciones.reduce((acc, medicion) => {
-                const sensorId = medicion.sensor.idSensor;
-                if (!acc[sensorId]) {
-                    acc[sensorId] = [];
-                }
-                acc[sensorId].push(medicion);
-                return acc;
-            }, {});
-
-            // Generar un gráfico para cada sensor
-            Object.keys(datosPorSensor).forEach(sensorId => {
-                const sensorData = datosPorSensor[sensorId];
-                const valores = sensorData.map(medicion => medicion.valor);
-                const indices = sensorData.map(medicion => medicion.index);
-
-                // Crear un contenedor para cada gráfico
-                const graficoDiv = document.createElement('div');
-                graficoDiv.style.width = '100%';
-                graficoDiv.style.height = '400px';
-                document.getElementById('graficos').appendChild(graficoDiv);
-
-                // Inicializar el gráfico para el sensor actual
-                Highcharts.chart(graficoDiv, {
-                    chart: {
-                        height: 400, // Ajusta el tamaño para no exceder el viewport
-                      },
-                    chart: {
-                        type: 'line'
-                    },
-                    title: {
-                        text: `Mediciones - Sensor ${sensorId}`
-                    },
-                    xAxis: {
-                        categories: indices,
-                        title: {
-                            text: 'Index'
-                        }
-                    },
-                    yAxis: {
-                        title: {
-                            text: 'Valor '
-                        }
-                    },
-                    series: [{
-                        name: `Sensor ${sensorId}`,
-                        data: valores,
-                        lineWidth: 1 
-                    }]
-                });
-            });
+          console.error("No hay datos disponibles para graficar.");
+          return;
         }
+
+        // Agrupar datos por idSensor
+        const datosPorSensor = mediciones.reduce((acc, medicion) => {
+          const sensorId = medicion.sensor.idSensor;
+          if (!acc[sensorId]) {
+            acc[sensorId] = [];
+          }
+          acc[sensorId].push(medicion);
+          return acc;
+        }, {});
+
+        // Generar un gráfico para cada sensor
+        Object.keys(datosPorSensor).forEach(sensorId => {
+          const sensorData = datosPorSensor[sensorId];
+          const valores = sensorData.map(medicion => medicion.valor);
+          const indices = sensorData.map(medicion => medicion.index);
+
+          // Crear un contenedor para cada gráfico
+          const graficoDiv = document.createElement('div');
+          graficoDiv.style.width = '100%';
+          graficoDiv.style.height = '400px';
+          document.getElementById('graficos').appendChild(graficoDiv);
+
+          // Inicializar el gráfico para el sensor actual
+          Highcharts.chart(graficoDiv, {
+            chart: {
+              type: 'line',
+              boost: {
+                useGPUTranslations: true,
+                usePreAllocated: true
+              }
+            },
+            title: {
+              text: `Mediciones - Sensor ${sensorId}`
+            },
+            xAxis: {
+              categories: indices,
+              title: {
+                text: 'Index'
+              }
+            },
+            yAxis: {
+              title: {
+                text: 'Valor'
+              }
+            },
+            series: [{
+              name: `Sensor ${sensorId}`,
+              data: valores,
+              lineWidth: 1 
+            }]
+          });
+        });
+      });
     </script>
     <!-- plugins:js -->
-    <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
+    <script src="/assets/vendors/js/vendor.bundle.base.js" defer></script>
     <!-- endinject -->
-    <!-- Plugin js for this page -->
-    <script src="/assets/vendors/chart.js/Chart.min.js"></script>
-    <script src="/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
-    <script src="/assets/vendors/flot/jquery.flot.js"></script>
-    <script src="/assets/vendors/flot/jquery.flot.resize.js"></script>
-    <script src="/assets/vendors/flot/jquery.flot.categories.js"></script>
-    <script src="/assets/vendors/flot/jquery.flot.fillbetween.js"></script>
-    <script src="/assets/vendors/flot/jquery.flot.stack.js"></script>
-    <script src="/assets/vendors/flot/jquery.flot.pie.js"></script>
-    <!-- End plugin js for this page -->
-    <!-- inject:js -->
-    <script src="/assets/js/off-canvas.js"></script>
-    <script src="/assets/js/hoverable-collapse.js"></script>
-    <script src="/assets/js/misc.js"></script>
-
+    <script src="/assets/js/off-canvas.js" async></script>
+    <script src="/assets/js/hoverable-collapse.js" defer></script>
+    <script src="/assets/js/misc.js" defer></script>
   </body>
 </html>
