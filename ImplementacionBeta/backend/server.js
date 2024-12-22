@@ -41,11 +41,11 @@ app.get('/graficas/:id', (req, res) => MedicionController.mostrarGraficasMedicio
 
 //Vista principal
 app.get('/pagPrincipal', (req,res) => {
-  res.render('VersionBeta/index', { usuario: 'Jacorvi' });
+  res.render('VersionBeta/index', { usuario: 'Usuario' });
 })
 //Monitoreo
 app.get('/Monitoreo', (req,res) => {
-  res.render('VersionBeta/subindex', { usuario: 'Jacorvi' });
+  res.render('VersionBeta/subindex', { usuario: 'Usuario' });
 })
 
 //Manejo de primera medicion (Aceleración):

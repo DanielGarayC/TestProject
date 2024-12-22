@@ -14600,14 +14600,14 @@ dl {
     padding-right: 15px;
     width: calc(100% - 260px);
     height: 70px;
-    background: #000; }
+    background: #8FAFC9; }
     @media (max-width: 991px) {
       .navbar .navbar-menu-wrapper {
         width: 100%;
         padding-left: 11px; } }
     .navbar .navbar-menu-wrapper .navbar-toggler {
       border: 0;
-      color: #8e94a9; }
+      color: #000000; }
       @media (max-width: 991px) {
         .navbar .navbar-menu-wrapper .navbar-toggler:not(.navbar-toggler-right) {
           display: none; } }
@@ -14617,7 +14617,7 @@ dl {
           width: 34px;
           height: 34px;
           border-radius: 50px;
-          background: #3f3f40;
+          background: #8FAFC9   ;
           text-align: center;
           line-height: 2.2; }
     .navbar .navbar-menu-wrapper .navbar-text {
@@ -14645,7 +14645,7 @@ dl {
             padding-right: 0.5rem;
             padding-left: 0.5rem; } }
         .navbar .navbar-menu-wrapper .navbar-nav .nav-item .nav-link {
-          color: #8e94a9;
+          color: #000000;
           font-size: 0.875rem; }
           .navbar .navbar-menu-wrapper .navbar-nav .nav-item .nav-link i {
             font-size: 17px;
@@ -14884,13 +14884,7 @@ dl {
 /* Sidebar */
 .sidebar {
   min-height: calc(100vh - 70px);
-  background: linear-gradient(
-    to bottom,
-    #e6e5f2 0%,   /* Color inicial claro */
-    #d2d6e7 40%, /* Intermedio, un poco más oscuro */
-    #a5b5d3 70%, /* Más oscuro */
-    #4599cd 100% /* Color final */
-);
+  background: #8FAFC9; /* Aquí puedes usar cualquier color */
   font-family: "Rubik", sans-serif;
   padding: 0;
   width: 260px;
@@ -14954,7 +14948,7 @@ dl {
             font-size: 20px;
             line-height: 1;
             margin-right: 10px;
-            color: #423a8e; }
+            color: #000000; }
             .rtl .sidebar .nav .nav-item .nav-link i.menu-icon {
               margin-left: 10px;
               margin-right: 0; }
@@ -14980,7 +14974,7 @@ dl {
                 margin-left: 0;
                 margin-right: 0.25rem; }
         .sidebar .nav .nav-item .nav-link .menu-title {
-          color: #141212;
+          color: #000000;
           display: inline-block;
           font-size: 15px;
           line-height: 1;
