@@ -37,7 +37,62 @@ class MedicionRepository {
       throw err; // Lanza el error si algo sale mal
     }
   }
+  /*async getDecimatedDataById(id) {
+    const repository = this.getRepository();
+    const decimationFactor = 100; // Factor de decimación fijo
 
+    try {
+        // Consulta SQL para obtener la medición con los datos decimados
+        const queryMedicion = `
+            SELECT 
+                idMedicion,
+                Fecha_hora,
+                idTipoMedicion
+            FROM Medicion
+            WHERE idMedicion = ?;
+        `;
+
+        // Consulta SQL para decimación
+        const queryDataSensors = `
+            SELECT 
+                idSensor,
+                FLOOR(ds.\`index\` / ?) AS bloque,
+                AVG(valor) AS valorPromedio
+            FROM Data_sensor ds
+            WHERE ds.idMedicion = ?
+            GROUP BY idSensor, bloque
+            ORDER BY idSensor, bloque;
+        `;
+
+        // Ejecutar la consulta para obtener la medición
+        const medicionResult = await repository.manager.query(queryMedicion, [id]);
+
+        if (!medicionResult || medicionResult.length === 0) {
+            console.error(`No se encontró una medición con el ID ${id}`);
+            return null;
+        }
+
+        // Ejecutar la consulta para obtener los datos decimados
+        const dataSensorsResult = await repository.manager.query(queryDataSensors, [decimationFactor, id]);
+
+        // Construir el objeto de medición con datos decimados
+        const medicion = {
+            idMedicion: medicionResult[0].idMedicion,
+            Fecha_hora: medicionResult[0].Fecha_hora,
+            idTipoMedicion: medicionResult[0].idTipoMedicion,
+            data_sensors: dataSensorsResult.map((row) => ({
+                idSensor: row.idSensor,
+                bloque: row.bloque,
+                valorPromedio: row.valorPromedio,
+            })),
+        };
+
+        return medicion;
+    } catch (error) {
+        console.error("Error al ejecutar la consulta de decimación:", error);
+        throw error;
+    }
+} */
   async getDecimatedDataById(id) {
     const repository = this.getRepository();
     const medicion = await repository.findOne({

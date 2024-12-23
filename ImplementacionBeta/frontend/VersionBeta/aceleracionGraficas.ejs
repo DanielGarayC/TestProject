@@ -17,16 +17,33 @@
     <script src="https://code.highcharts.com/modules/heatmap.js" defer></script>
 
     <style>
+      
         #graficosContainer {
             width: 100%;
-            height: auto;
-            overflow: auto;
+            max-height: 70vh; 
+            overflow-y: auto;
+            overflow-x: hidden
         }
         .selector-container {
             display: flex;
             justify-content: center;
             margin-bottom: 20px;
         }
+
+      @keyframes spin {
+          to {
+              transform: rotate(360deg);
+          }
+      }
+      .spinner {
+          margin: auto;
+          width: 40px;
+          height: 40px;
+          border: 4px solid rgba(0,0,0,0.1);
+          border-top-color: #3498db;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+      }
     </style>
   </head>
   <body>
@@ -72,22 +89,28 @@
             </div>
           </nav>
     <div class="main-panel">
-      <h1>Gráficas PSD, FDD y Espectrograma</h1>
       <div class="content-wrapper pb-0">
-        <label for="tipoGrafica">Tipo de Gráfica:</label>
-        <select id="tipoGrafica">
-          <option value="PSD">PSD</option>
-          <option value="FDD">FDD</option>
-        </select>
-        <label for="escala">Escala:</label>
-        <select id="escala">
-          <option value="lineal">Lineal</option>
-          <option value="dB">dB</option>
-        </select>
+        <h1>Gráficas PSD, FDD y Espectrograma</h1>
+        <div id="graficosContainer">
+          <h3 style ="margin-left: 30px;">PSD/FDD</h3>
+          <label for="tipoGrafica">Tipo de Gráfica:</label>
+          <select id="tipoGrafica">
+            <option value="PSD">PSD</option>
+            <option value="FDD">FDD</option>
+          </select>
+          <label for="escala">Escala:</label>
+          <select id="escala">
+            <option value="lineal">Lineal</option>
+            <option value="dB">dB</option>
+          </select>
+
+        <!-- Mensaje de carga -->
+      <div id="loadingPrincipal" style="display: none; text-align: center; margin: 20px;">
+        <div class="spinner" style="margin-bottom: 10px; width: 40px; height: 40px; border: 4px solid rgba(0,0,0,0.1); border-top-color: #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <span>Generando gráfica, por favor espera...</span>
       </div>
-      <div id="graficosContainer">
         <div id="graficoPrincipal" style="width: 100%; height: 400px;"></div>
-        <h3>Espectrograma</h3>
+        <h3 style ="margin-left: 30px; margin-top: 8px;">Espectrograma</h3>
         <div class="selector-container">
           <label for="escalaEspectrograma">Escala:</label>
           <select id="escalaEspectrograma">
@@ -95,7 +118,12 @@
             <option value="dB">dB</option>
           </select>
         </div>
+        <div id="loadingEspectrograma" style="display: none; text-align: center; margin: 20px;">
+          <div class="spinner"></div>
+          <span>Generando gráfica del espectrograma, por favor espera...</span>
+        </div>
         <div id="graficoEspectrograma" style="width: 100%; height: 400px;"></div>
+      </div>
       </div>
     </div>
 
@@ -105,21 +133,33 @@
       const spectrogramData = JSON.parse('<%- JSON.stringify(spectrogramData || []) %>');
 
       function inicializarGraficaPrincipal(tipo, escala) {
-        const data = tipo === 'PSD' ? psdData : fddData;
-        const series = data.map(sensor => ({
-          name: `Sensor ${sensor.sensorId}`,
-          data: escala === 'dB' 
-            ? sensor[tipo.toLowerCase()].map(v => (v > 0 ? 10 * Math.log10(v) : -120)) 
-            : sensor[tipo.toLowerCase()]
-        }));
+        const loadingPrincipal = document.getElementById('loadingPrincipal');
+        const graficoPrincipal = document.getElementById('graficoPrincipal');
+
+        // Mostrar mensaje de carga y ocultar gráfica
+        loadingPrincipal.style.display = 'block';
+        graficoPrincipal.style.display = 'none';
+
+        setTimeout(() => {
+          const data = tipo === 'PSD' ? psdData : fddData;
+          const series = data.map(sensor => ({
+            name: `Sensor ${sensor.sensorId}`,
+            data: escala === 'dB'
+              ? sensor[tipo.toLowerCase()].map(v => (v > 0 ? 10 * Math.log10(v) : -120))
+              : sensor[tipo.toLowerCase()]
+          }));
 
         Highcharts.chart('graficoPrincipal', {
-          chart: { type: 'line', boost: { useGPUTranslations: true, usePreAllocated: true } },
+          chart: { type: 'line', boost: { useGPUTranslations: true, usePreAllocated: true, seriesThreshold: 1 } },
           title: { text: `${tipo} (${escala})` },
           xAxis: { title: { text: 'Index' } },
           yAxis: { title: { text: escala === 'dB' ? 'Amplitud (dB)' : 'Amplitud (Lineal)' } },
           series
         });
+        // Ocultar mensaje de carga y mostrar gráfica
+        loadingPrincipal.style.display = 'none';
+        graficoPrincipal.style.display = 'block';
+      }, 300); // Simulación de retraso
       }
 
       document.getElementById('tipoGrafica').addEventListener('change', e => {
@@ -135,18 +175,26 @@
       });
 
       function inicializarEspectrograma(escala) {
-        const sensor = spectrogramData[0]; // Muestra solo el primer sensor
-        const spectrogramValues = [];
-        for (let x = 0; x < sensor.spectrogram.length; x++) {
-          for (let y = 0; y < sensor.spectrogram[x].length; y++) {
-            let value = sensor.spectrogram[x][y];
-            value = escala === 'dB' && value > 0 ? 10 * Math.log10(value) : value;
-            spectrogramValues.push([x, y, value]);
+        const loadingEspectrograma = document.getElementById('loadingEspectrograma');
+        const graficoEspectrograma = document.getElementById('graficoEspectrograma');
+
+        // Mostrar mensaje de carga y ocultar gráfica
+        loadingEspectrograma.style.display = 'block';
+        graficoEspectrograma.style.display = 'none';
+
+        setTimeout(() => {
+          const sensor = spectrogramData[0];
+          const spectrogramValues = [];
+          for (let x = 0; x < sensor.spectrogram.length; x++) {
+            for (let y = 0; y < sensor.spectrogram[x].length; y++) {
+              let value = sensor.spectrogram[x][y];
+              value = escala === 'dB' && value > 0 ? 10 * Math.log10(value) : value;
+              spectrogramValues.push([x, y, value]);
+            }
           }
-        }
 
         Highcharts.chart('graficoEspectrograma', {
-          chart: { type: 'heatmap', boost: { useGPUTranslations: true, usePreAllocated: true } },
+          chart: { type: 'heatmap', boost: { useGPUTranslations: true, usePreAllocated: true, seriesThreshold: 1 } },
           title: { text: `Espectrograma (${escala})` },
           xAxis: { title: { text: 'Tiempo' } },
           yAxis: { title: { text: 'Frecuencia' } },
@@ -166,6 +214,10 @@
             dataLabels: { enabled: false }
           }]
         });
+        // Ocultar mensaje de carga y mostrar gráfica
+        loadingEspectrograma.style.display = 'none';
+        graficoEspectrograma.style.display = 'block';
+      }, 150); // Simulación de retraso
       }
 
       document.getElementById('escalaEspectrograma').addEventListener('change', e => {
@@ -175,7 +227,7 @@
 
       document.addEventListener('DOMContentLoaded', () => {
         inicializarGraficaPrincipal('PSD', 'lineal'); // Configuración predeterminada
-        inicializarEspectrograma('dB');          // Configuración predeterminada
+        inicializarEspectrograma('lineal');          // Configuración predeterminada
       });
     </script>
 

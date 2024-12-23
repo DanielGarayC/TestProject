@@ -170,42 +170,6 @@ class MedicionController {
             return res.status(404).send("No se encontraron datos para la medición de tipo 1 con ID " + tipo1);
         }
 
-        const medicionTipo1Graficas = await MedicionRepository.getSimpleData(tipo1);
-        const datosPorSensor = await MedicionRepository.procesarDatos(medicionTipo1Graficas.data_sensors);
-
-        const analisisPorSensor = Object.keys(datosPorSensor).map(sensorId => {
-          const sensorData = datosPorSensor[sensorId].map(d => d.valor);
-          console.log(`Procesando análisis para el sensor ${sensorId}`);
-      
-          try {
-              const psd = AnalisisSensoresService.computePSD(sensorData);
-              const fdd = AnalisisSensoresService.computeFDD(sensorData);
-              const spectrogram = AnalisisSensoresService.calculateSpectrogram(sensorData);
-              //console.log(`FDD calculado para sensor ${sensorId}:`, fdd);
-              if (!Array.isArray(spectrogram) || !spectrogram.every(row => Array.isArray(row))) {
-                console.error(`Espectrograma no válido para el sensor ${sensorId}`);
-                return { sensorId, error: 'Espectrograma no válido' };
-              }
-              //console.log(`Resultados para sensor ${sensorId}:`, { psd, fdd, spectrogram });
-
-              return {
-                sensorId,
-                psd,
-                fdd,
-                spectrogram,
-              };
-          } catch (error) {
-              console.error(`Error en el análisis para el sensor ${sensorId}:`, error);
-              return {
-                sensorId,
-                psd: [],
-                fdd: null,
-                spectrogram: [],
-                error: error.message,
-              };
-          }
-        });
-      
 
         // Obtener la medición del tipo 2 sin decimación
         const medicionTipo2 = await MedicionRepository.getSimpleData(tipo2);
@@ -225,28 +189,10 @@ class MedicionController {
 
         const valorHumedad = dataSensorTipo2Humedad ? dataSensorTipo2Humedad.valor : 'No disponible';
 
-        // Separar los datos por tipo para el front-end
-        const psdData = analisisPorSensor.map(sensor => ({
-          sensorId: sensor.sensorId,
-          psd: sensor.psd,
-        }));
-
-        const fddData = analisisPorSensor.map(sensor => ({
-          sensorId: sensor.sensorId,
-          fdd: sensor.fdd,
-        }));
-        //console.log(fddData)
-        const spectrogramData = analisisPorSensor.map(sensor => ({
-          sensorId: sensor.sensorId,
-          spectrogram: sensor.spectrogram,
-        }));
-
         // Renderizar la vista que muestra ambas mediciones
         res.render('VersionBeta/aceleracion', {
                     medicionTipo1,
-                    psdData,
-                    fddData,
-                    spectrogramData,
+                    
                     valorTemperatura: { nombre: "Sensor 3 - Temperatura", valor: valorTemperatura },
                     valorHumedad: { nombre: "Sensor 4 - Humedad", valor: valorHumedad }});
        } catch (err) {
@@ -274,10 +220,7 @@ async mostrarGraficasMedicionPorIdEnVista(req, res) {
               const fdd = AnalisisSensoresService.computeFDD(sensorData);
               const spectrogram = AnalisisSensoresService.calculateSpectrogram(sensorData);
               //console.log(`FDD calculado para sensor ${sensorId}:`, fdd);
-              if (!Array.isArray(spectrogram) || !spectrogram.every(row => Array.isArray(row))) {
-                console.error(`Espectrograma no válido para el sensor ${sensorId}`);
-                return { sensorId, error: 'Espectrograma no válido' };
-              }
+              
               //console.log(`Resultados para sensor ${sensorId}:`, { psd, fdd, spectrogram });
 
               return {
@@ -297,6 +240,8 @@ async mostrarGraficasMedicionPorIdEnVista(req, res) {
               };
             }
           });
+
+            
               // Separar los datos por tipo para el front-end
               const psdData = analisisPorSensor.map(sensor => ({
                 sensorId: sensor.sensorId,
@@ -307,11 +252,29 @@ async mostrarGraficasMedicionPorIdEnVista(req, res) {
                 sensorId: sensor.sensorId,
                 fdd: sensor.fdd,
               }));
-              //console.log(fddData)
               const spectrogramData = analisisPorSensor.map(sensor => ({
                 sensorId: sensor.sensorId,
                 spectrogram: sensor.spectrogram,
               }));
+              //console.log(fddData)
+              
+               /*Calcular espectrograma general aparte
+               const datosCombinados = [];
+               Object.keys(datosPorSensor).forEach(sensorId => {
+                   datosPorSensor[sensorId].forEach(d => datosCombinados.push(d.valor));
+               });
+ 
+               console.log(`Datos combinados para el espectrograma general: ${datosCombinados.length} valores`);
+ 
+               let spectrogramData = [];
+               try {
+                spectrogramData = AnalisisSensoresService.calculateSpectrogram(datosCombinados);
+                   if (!Array.isArray(spectrogramData) || !spectrogramData.every(row => Array.isArray(row))) {
+                       console.error("Espectrograma general no válido");
+                   }
+               } catch (error) {
+                   console.error("Error al calcular el espectrograma general:", error);
+               }*/
 
               res.render('VersionBeta/aceleracionGraficas', {
                 id,
