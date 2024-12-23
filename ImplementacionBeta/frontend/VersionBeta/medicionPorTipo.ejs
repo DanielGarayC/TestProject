@@ -49,52 +49,68 @@
             <button class="navbar-toggler navbar-toggler align-self-center mr-2" type="button" data-toggle="minimize">
               <i class="mdi mdi-menu"></i>
             </button>
-            
             <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
               <span class="mdi mdi-menu"></span>
             </button>
           </div>
         </nav>
         <div class="main-panel">
-            <div class="content-wrapper pb-0">
-                <h1><%= titulo %></h1>
-                <div class="row mb-4">
-                  <form method="GET" action="/tipoMedicion/<%= idTipoMedicion %>" class="form-inline">
-                    <label for="fechaFiltro" class="mr-2">Filtrar por fecha:</label>
-                    <input 
-                      type="date" 
-                      id="fechaFiltro" 
-                      name="fecha" 
-                      class="form-control mr-2" 
-                      value="<%= fechaFiltro || '' %>" 
-                      required 
-                    />
-                    <button type="submit" class="btn btn-primary">Buscar</button>
-                  </form>
-                </div>
-                <div class="row">
-                  <% if (mediciones.length > 0) { %>
-                    <% mediciones.forEach((medicion, index) => { %>
-                      <div class="col-md-3">
-                        <a 
-                          href="/mediciones/<%= medicion.idMedicion %>" 
-                          class="card mb-4 text-decoration-none">
-                          <div class="card-body">
-                            <p class="card-text text-center text-dark" style="font-weight: 500;">
-                              <%= new Date(medicion.fecha_hora).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' }) %>
-                            </p>
-                          </div>
-                        </a>
-                      </div>
-                      <% if ((index + 1) % 4 === 0) { %>
-                        </div><div class="row">
-                      <% } %>
-                    <% }) %>
-                  <% } else { %>
-                    <p>No se encontraron mediciones para la fecha seleccionada.</p>
-                  <% } %>
-                </div>
+          <div class="content-wrapper pb-0">
+            <h1><%= titulo %></h1>
+            <div class="row mb-4">
+              <form method="GET" action="/tipoMedicion/<%= idTipoMedicion %>" class="form-inline">
+                <label for="fechaFiltro" class="mr-2">Filtrar por fecha:</label>
+                <input 
+                  type="date" 
+                  id="fechaFiltro" 
+                  name="fecha" 
+                  class="form-control mr-2" 
+                  value="<%= fechaFiltro || '' %>" 
+                  required 
+                />
+                <button type="submit" class="btn btn-primary">Buscar</button>
+              </form>
             </div>
+            <% if (mediciones.length > 0) { %>
+              <div class="row">
+                <% mediciones.forEach((medicion, index) => { %>
+                  <div class="col-md-3">
+                    <a 
+                      href="<%= 
+                      parseInt(idTipoMedicion, 10) === 1 
+                        ? `/mediciones/${medicion.idMedicion}` 
+                        : parseInt(idTipoMedicion, 10) === 2 
+                        ? `/medicionT/${medicion.idMedicion}` 
+                        : `/mediciones-default/${medicion.idMedicion}`
+                        %>" 
+                      class="card mb-4 text-decoration-none">
+                      <div class="card-body">
+                        <p class="card-text text-center text-dark" style="font-weight: 500;">
+                          <%= new Date(medicion.fecha_hora).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' }) %>
+                        </p>
+                      </div>
+                    </a>
+                  </div>
+                  <% if ((index + 1) % 4 === 0) { %>
+                    </div><div class="row">
+                  <% } %>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="card text-center">
+                    <div class="card-body">
+                      <p class="card-text text-dark" style="font-weight: 500;">
+                        No se encontraron mediciones para el tipo o la fecha especificados.
+                      </p>
+                      <a href="/pagPrincipal" class="btn btn-secondary mt-3">Regresar</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% } %>
+          </div>
         </div>
         <!-- main-panel ends -->
       </div>
